@@ -1,0 +1,498 @@
+
+RESET
+IMPORT;FILE="C:\Users\sam07\NUS Dropbox\Sameera Jayan Senanayake\Duke-NUS\2025_Robin DCE\DCE Data\Main\genetic_data_dce_final.csv"$
+
+
+
+
+?---- MNL ---- : Cost as categorical
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;choices = 1, 2, 3
+ ;checkdata
+ ;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+         
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+/
+    U(3) = ASC
+
+   
+    $
+
+
+
+
+
+
+
+
+
+?---- MNL ---- : Cost as continuous
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;choices = 1, 2, 3
+ ;checkdata
+ ;model:
+
+    U(1) =       COST_CON*COST_CON+ 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+         
+
+/
+
+    U(2) =       COST_CON*COST_CON+ 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+/
+
+    U(3) = ASC
+
+
+
+    $
+
+
+
+
+
+
+?---- Mixed MNL ---- : 
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST5(n), COST15(n), COST30(n), COST150(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n)
+
+;pts = 500 
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+?---- Mixed MNL ---- : Race --> Chinese
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST5(n), COST15(n), COST30(n), COST150(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n),RACEMAL(n), RACEIND(n), RACEOTH(n)
+
+;pts = 500 
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     RACEMAL*RACEMAL + RACEIND*RACEIND + RACEOTH*RACEOTH
+
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     RACEMAL*RACEMAL + RACEIND*RACEIND + RACEOTH*RACEOTH
+
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+?---- Mixed MNL ---- : Gender --> Female
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST5(n), COST15(n), COST30(n), COST150(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n),SEXFE(n)
+;pts = 500 
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     SEXFE*SEXFE
+
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     SEXFE*SEXFE
+
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+?---- Mixed MNL ---- : Religion --> Ref (Cathalic)
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST5(n), COST15(n), COST30(n), COST150(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n),RELTAO(n), RELBUD(n), RELHIN(n), RELMUS(n) 
+;pts = 500 
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     RELTAO*RELTAO + RELBUD*RELBUD + RELHIN*RELHIN + RELMUS*RELMUS
+
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     RELTAO*RELTAO + RELBUD*RELBUD + RELHIN*RELHIN + RELMUS*RELMUS
+
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+?---- Mixed MNL ---- : Education (Ref - Less than Bach)
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST5(n), COST15(n), COST30(n), COST150(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n),EDUPBCH(n)
+;pts = 500 
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     EDUPBCH*EDUPBCH
+
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     EDUPBCH*EDUPBCH
+
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+?---- Mixed MNL ---- : Chilren (Ref - No)
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST5(n), COST15(n), COST30(n), COST150(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n),CHIYES(n)
+;pts = 500 
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     CHIYES*CHIYES
+
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     CHIYES*CHIYES
+
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+?---- Mixed MNL ---- : Agree genetic testinf (Ref - Neutral)
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST5(n), COST15(n), COST30(n), COST150(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n),AGR_AGR(n)
+;pts = 500 
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     AGR_AGR*AGR_AGR
+
+
+/
+
+    U(2) = COST5*COST5 + COST15*COST15 + COST30*COST30 + COST150*COST150 + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 +
+		     AGR_AGR*AGR_AGR
+
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+? Calculating the WTP values - 
+
+Nlogit
+ ;lhs = choice, cset, ALTERNAT
+ ;rpl
+ ;choices = 1, 2, 3
+;fcn = COST_CON(n), WHEN_2(n), WHEN_3(n), 
+       HOW_2(n), HOW_3(n), TYPE_2(n), TYPE_3(n), TYPE_4(n), 
+       EDU_2(n), EDU_3(n), CLIN_2(n), CLIN_3(n),
+       WAIT_2(n), WAIT_3(n)
+
+;pts = 500
+;halton
+;maxit = 200
+;pds = 10
+;checkdata
+;model:
+
+    U(1) =       COST_CON*COST_CON + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+
+
+/
+
+    U(2) =       COST_CON*COST_CON + 
+                 WHEN_2*WHEN_2 + WHEN_3*WHEN_3 + 
+                 HOW_2*HOW_2 + HOW_3*HOW_3 + 
+                 TYPE_2*TYPE_2 + TYPE_3*TYPE_3 + TYPE_4*TYPE_4 + 
+                 EDU_2*EDU_2 + EDU_3*EDU_3 + 
+                 CLIN_2*CLIN_2 + CLIN_3*CLIN_3 + 
+                 WAIT_2*WAIT_2 + WAIT_3*WAIT_3 
+/
+
+    U(3) = ASC
+   
+    $
+
+
+
+
+
+
+Wald
+;parameters = b
+;covariance = varb
+;labels = bCOST_CO, bWHEN_2, bWHEN_3, bHOW_2, bHOW_3, bTYPE_2, 
+bTYPE_3, bTYPE_4, bEDU_2, bEDU_3, bCLIN_2, bCLIN_3, bWAIT_2, 
+bWAIT_3, bASC, bNsCOST_C, bNsWHEN_2, bNsWHEN_3, bNsHOW_2, bNsHOW_3,
+bNsTYPE_2, bNsTYPE_3, bNsTYPE_4, bNsEDU_2, bNsEDU_3, bNsCLIN_2,
+bNsCLIN_3, bNsWAIT_2, bNsWAIT_3
+
+
+;fn1  = bWHEN_2  = (bWHEN_2)/(bCOST_CO)
+;fn2  = bWHEN_3  = (bWHEN_3)/(bCOST_CO)
+;fn3  = bHOW_2   = (bHOW_2)/(bCOST_CO)
+;fn4  = bHOW_3   = (bHOW_3)/(bCOST_CO)
+;fn5  = bTYPE_2  = (bTYPE_2)/(bCOST_CO)
+;fn6  = bTYPE_3  = (bTYPE_3)/(bCOST_CO)
+;fn7  = bTYPE_4  = (bTYPE_4)/(bCOST_CO)
+;fn8  = bEDU_2   = (bEDU_2)/(bCOST_CO)
+;fn9  = bEDU_3   = (bEDU_3)/(bCOST_CO)
+;fn10 = bCLIN_2  = (bCLIN_2)/(bCOST_CO)
+;fn11 = bCLIN_3  = (bCLIN_3)/(bCOST_CO)
+;fn12 = bWAIT_2  = (bWAIT_2)/(bCOST_CO)
+;fn13 = bWAIT_3  = (bWAIT_3)/(bCOST_CO)
+
+;k&r
+;pts=5000
+$
+
+
+
