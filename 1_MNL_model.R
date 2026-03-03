@@ -1,35 +1,44 @@
-library(mlogit)
-library(gmnl)
-library(tidyverse)
+library(dplyr)
+library(logitr)
 
 fpath <- paste0("C:/Users/", Sys.getenv("USERNAME"), "/NUS Dropbox/Robin Daniel Blythe/Carrier screening program/Preference studies/DCEs/ECS preferences/Results")
 df_raw <- read.csv(paste0(fpath, "./genetic_data_dce_final.csv")) |>
-  mutate(across(everything(), ~ifelse(. == -999, 0, .)),
-         chid = as.integer(paste0(record, task)))
+  mutate(across(everything(), ~if_else(. == -999, 0, .))) |>
+  as_tibble()
 
-#df_mlogit <- dfidx(df_raw, idx = c("chid", "alternative"), choice = "choice", shape = "long")
+df_raw$obsID <- rep(1:(nrow(df_raw)/3), each = 3)
+df_raw$asc <- if_else(df_raw$alternative == 3, 1, 0)
 
-df_mlogit_data <- mlogit.data(
-  df_raw, 
-  choice = "choice", 
-  shape = "long", 
-  alt.var = "alternative", 
-  chid.var = "chid", 
-  id.var = "record"
-  )
+# Core concepts of MMNL:
+# Random utility maximisation: individuals choose options that max utility
+#   This contains an observable and unobservable component
+# Preference distribution: parameters are distributed according to pre-specified family
+# Accounts for correlation between individuals' responses
+# Individuals are independent of one another
 
-
-model1 <- gmnl(
-  choice ~ cost5 + cost15 + cost30 + cost150 + 
-    when_2 + when_3 + 
-    how_2 + how_3 + 
-    type_2 + type_3 + type_4 + 
-    edu_2 + edu_3 + 
-    clin_2 + clin_3 + 
-    wait_2 + wait_3,
-  data = df_mlogit_data,
-  model = "mixl",
-  ranp = c(
+mmnl_fit <- logitr(
+  data = df_raw,
+  outcome = "choice", # Binary flag for option chosen
+  obsID = "obsID",
+  pars = c(
+    # Costs as discrete, ref = cost0
+    "cost5", "cost15", "cost30", "cost150",
+    # When to screen
+    "when_2", "when_3",
+    # How to screen
+    "how_2", "how_3",
+    # Types of conditions to screen
+    "type_2", "type_3", "type_4",
+    # How to receive education on test
+    "edu_2", "edu_3",
+    # Which clinician should deliver screening
+    "clin_2", "clin_3",
+    # Wait times
+    "wait_2", "wait_3",
+    # Alternative-specific constant
+    "asc"
+  ),
+  randPars = c(
     cost5 = "n", cost15 = "n", cost30 = "n", cost150 = "n",
     when_2 = "n", when_3 = "n",
     how_2 = "n", how_3 = "n",
@@ -38,11 +47,10 @@ model1 <- gmnl(
     clin_2 = "n", clin_3 = "n",
     wait_2 = "n", wait_3 = "n"
   ),
-  reflevel = "3",
-  R = 50,
-  halton = NA,
-  panel = TRUE,
-  correlation = TRUE,
-  method = "bfgs",
-  iterlim = 200
+  panelID = "record",
+  numDraws = 500,
+  drawType = "sobol",
+  numCores = parallelly::availableCores()
 )
+
+summary(mmnl_fit)
