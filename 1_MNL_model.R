@@ -16,7 +16,7 @@ df_raw$asc <- if_else(df_raw$alternative == 3, 1, 0)
 # Accounts for correlation between individuals' responses
 # Individuals are independent of one another
 
-mmnl_fit <- logitr(
+mmnl_costcat <- logitr(
   data = df_raw,
   outcome = "choice", # Binary flag for option chosen
   obsID = "obsID",
@@ -53,4 +53,50 @@ mmnl_fit <- logitr(
   numCores = parallelly::availableCores()
 )
 
-summary(mmnl_fit)
+# Model has converged, gives stable estimates and reflects nlogit code
+summary(mmnl_costcat)
+
+saveRDS(mmnl_costcat, "./Models/mmnl_categorical.rds")
+
+
+# Cost as a constant
+mmnl_costcon <- logitr(
+  data = df_raw,
+  outcome = "choice", # Binary flag for option chosen
+  obsID = "obsID",
+  pars = c(
+    # Costs as discrete, ref = cost0
+    "cost_con",
+    # When to screen
+    "when_2", "when_3",
+    # How to screen
+    "how_2", "how_3",
+    # Types of conditions to screen
+    "type_2", "type_3", "type_4",
+    # How to receive education on test
+    "edu_2", "edu_3",
+    # Which clinician should deliver screening
+    "clin_2", "clin_3",
+    # Wait times
+    "wait_2", "wait_3",
+    # Alternative-specific constant
+    "asc"
+  ),
+  randPars = c(
+    cost_con = "n",
+    when_2 = "n", when_3 = "n",
+    how_2 = "n", how_3 = "n",
+    type_2 = "n", type_3 = "n", type_4 = "n",
+    edu_2 = "n", edu_3 = "n",
+    clin_2 = "n", clin_3 = "n",
+    wait_2 = "n", wait_3 = "n"
+  ),
+  panelID = "record",
+  numDraws = 500,
+  drawType = "sobol",
+  numCores = parallelly::availableCores()
+)
+
+summary(mmnl_costcon)
+
+saveRDS(mmnl_costcon, "./Models/mmnl_continuous.rds")
