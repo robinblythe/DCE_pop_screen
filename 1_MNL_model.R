@@ -45,7 +45,8 @@ mmnl_costcat <- logitr(
     type_2 = "n", type_3 = "n", type_4 = "n",
     edu_2 = "n", edu_3 = "n",
     clin_2 = "n", clin_3 = "n",
-    wait_2 = "n", wait_3 = "n"
+    wait_2 = "n", wait_3 = "n",
+    asc = "n"
   ),
   panelID = "record",
   numDraws = 500,
@@ -89,8 +90,9 @@ mmnl_costcon <- logitr(
     type_2 = "n", type_3 = "n", type_4 = "n",
     edu_2 = "n", edu_3 = "n",
     clin_2 = "n", clin_3 = "n",
-    wait_2 = "n", wait_3 = "n"
-  ),
+    wait_2 = "n", wait_3 = "n",
+    asc = "n"
+    ),
   panelID = "record",
   numDraws = 500,
   drawType = "sobol",
@@ -98,5 +100,8 @@ mmnl_costcon <- logitr(
 )
 
 summary(mmnl_costcon)
+# Notes: the large SDs in the random coefficients suggest heterogeneity
+# These could be the parameters that we allow additional payment to handle
+# E.g., extra cost if testing outside marriage, or to speed up wait times to below 16 weeks
 
 saveRDS(mmnl_costcon, "./Models/mmnl_continuous.rds")

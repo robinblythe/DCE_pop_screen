@@ -27,6 +27,7 @@ p_wtp +
   geom_point(size = 3) +
   geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(-3000, 1000), breaks = seq(-3000, 1000, 500)) +
   coord_flip() +
   labs(x = NULL, y = "WTP (SGD)") +
   theme_minimal() +
@@ -78,6 +79,7 @@ predict_uptake <- predict(
     .keep = "none"
   )
 remove(choice_sets, choices, optout, single_choice)
+
 
 p_uptake <- bind_rows(
   predict_uptake |> filter(how == 1, type == 1, edu == 1, clin == 1, wait == 1) |>
