@@ -49,7 +49,7 @@ mmnl_costcat <- logitr(
     asc = "n"
   ),
   panelID = "record",
-  numDraws = 500,
+  numDraws = 500, # try increasing draws until results have stable SEs
   drawType = "sobol",
   numCores = parallelly::availableCores()
 )
@@ -92,7 +92,8 @@ mmnl_costcon <- logitr(
     clin_2 = "n", clin_3 = "n",
     wait_2 = "n", wait_3 = "n",
     asc = "n"
-    ),
+    ), 
+  #numMultiStarts = 10, # try this for asc*relMus or asc*raceMal
   panelID = "record",
   numDraws = 500,
   drawType = "sobol",
@@ -105,3 +106,16 @@ summary(mmnl_costcon)
 # E.g., extra cost if testing outside marriage, or to speed up wait times to below 16 weeks
 
 saveRDS(mmnl_costcon, "./Models/mmnl_continuous.rds")
+
+
+# Sensitivity analysis: drop the 12 people who opted out
+optins <- df_raw |> 
+  group_by(record) |> 
+  filter(asc == 1) |> 
+  summarise(optouts = sum(choice)) |> 
+  filter(optouts < 10) |> 
+  pull(record)
+
+# Sensitivity analysis: run for religion and race, including as fixed effects relative to reference groups (two models)
+# in paper - talk about the religion influence
+# 1st choice - VIH first, maybe 

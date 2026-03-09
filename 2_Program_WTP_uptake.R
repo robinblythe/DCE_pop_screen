@@ -5,7 +5,7 @@ mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 
 # WTP
 wtp_costcon <- wtp(mmnl_costcon, "cost_con")
-rownames(wtp_costcon)[2:15] <- c(
+rownames(wtp_costcon)[2:14] <- c( # Fix number of attribute levels
   "Married couples only", "Married couples before conception only",
   "Stepwise screening", "Individual screening",
   "Extremely severe & severe", "Extremely severe, severe & moderate", "All conditions regardless of severity",
@@ -14,9 +14,9 @@ rownames(wtp_costcon)[2:15] <- c(
   "Up to 8 weeks wait", "Up to 16 weeks wait"
 )
 
-p_wtp <- wtp_costcon[2:15, ] |>
+p_wtp <- wtp_costcon[2:14, ] |>
   mutate(
-    attribute = rownames(wtp_costcon)[2:15],
+    attribute = rownames(wtp_costcon)[2:14],
     wtp_sgd = Estimate * 100,  # Convert to actual SGD
     ci_lower = (Estimate - 1.96 * `Std. Error`) * 100,
     ci_upper = (Estimate + 1.96 * `Std. Error`) * 100
@@ -27,7 +27,7 @@ p_wtp +
   geom_point(size = 3) +
   geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  scale_y_continuous(limits = c(-3000, 1000), breaks = seq(-3000, 1000, 500)) +
+  #scale_y_continuous(limits = c(-3000, 1000), breaks = seq(-3000, 1000, 500)) +
   coord_flip() +
   labs(x = NULL, y = "WTP (SGD)") +
   theme_minimal() +
@@ -124,3 +124,7 @@ p_uptake +
         panel.grid.minor = element_blank())
 
 ggsave("./Figures/uptake_by_attribute.png", height = 10, width = 8)
+
+# maybe try a scatter with cost on one axis and combo of alternatives on other
+
+# Add analysis of 4 alternatives presented together: total uptake including opt-out

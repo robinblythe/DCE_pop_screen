@@ -12,6 +12,6 @@ mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 
 coefs <- coef(mmnl_costcon)
 
-# Define scenarios of interest (e.g., opt-out vs. specific alternatives)
-
+# Malays
+# Muslims
 
