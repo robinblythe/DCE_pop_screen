@@ -116,6 +116,8 @@ optins <- df_raw |>
   filter(optouts < 10) |> 
   pull(record)
 
+
+
 # Sensitivity analysis: run for religion and race, including as fixed effects relative to reference groups (two models)
 # in paper - talk about the religion influence
 # 1st choice - VIH first, maybe 
