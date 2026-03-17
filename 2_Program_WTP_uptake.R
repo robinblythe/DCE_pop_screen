@@ -14,6 +14,7 @@ rownames(wtp_costcon)[2:14] <- c( # Fix number of attribute levels
   "Up to 8 weeks wait", "Up to 16 weeks wait"
 )
 
+# Costs in model are divided by 10
 p_wtp <- wtp_costcon[2:14,] |>
   mutate(
     attribute = rownames(wtp_costcon)[2:14],
@@ -33,12 +34,13 @@ p_wtp +
   theme_minimal() +
   theme(panel.grid.minor = element_blank())
 
+# Save wtp results as table
 write.csv(p_wtp$data[,c("attribute", "wtp_sgd", "ci_lower", "ci_upper")], "./Tables/wtp_results.csv", row.names = FALSE)
-
+# As figure
 ggsave("./Figures/WTP.png", height = 8, width = 12)
 
 
-# Uptake predictions
+# Uptake predictions - all
 choice_sets <- expand.grid(
   cost_con = c(0, 5, 15, 30, 150),
   when = c(1, 2, 3),
@@ -80,6 +82,15 @@ predict_uptake <- predict(
     wait = wait_1 + wait_2 * 2 + wait_3 * 3,
     .keep = "none"
   )
+
+
+
+
+predict_options <- predict(
+  mmnl_coston,
+  newdata = 
+)
+
 remove(choice_sets, choices, optout, single_choice)
 
 

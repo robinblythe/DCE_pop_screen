@@ -8,6 +8,7 @@ df_raw <- read.csv(paste0(fpath, "./genetic_data_dce_final.csv")) |>
 
 df_raw$obsID <- rep(1:(nrow(df_raw)/3), each = 3)
 df_raw$asc <- if_else(df_raw$alternative == 3, 1, 0)
+df_raw$cost_con <- df_raw$cost_con * 100
 
 # Core concepts of MMNL:
 # Random utility maximisation: individuals choose options that max utility
@@ -16,6 +17,7 @@ df_raw$asc <- if_else(df_raw$alternative == 3, 1, 0)
 # Accounts for correlation between individuals' responses
 # Individuals are independent of one another
 
+# Categorical cost -- just to validate directions and linearity assumptions
 mmnl_costcat <- logitr(
   data = df_raw,
   outcome = "choice", # Binary flag for option chosen
@@ -45,22 +47,29 @@ mmnl_costcat <- logitr(
     type_2 = "n", type_3 = "n", type_4 = "n",
     edu_2 = "n", edu_3 = "n",
     clin_2 = "n", clin_3 = "n",
-    wait_2 = "n", wait_3 = "n",
-    asc = "n"
+    wait_2 = "n", wait_3 = "n"
   ),
   panelID = "record",
-  numDraws = 500, # try increasing draws until results have stable SEs
+  numDraws = 800, # Convergence reached -- no change between 500 to 800 draws
   drawType = "sobol",
+  options = list(
+    ftol_rel = 1e-8,
+    ftol_abs = 1e-8,
+    maxeval = 10000
+  ),
   numCores = parallelly::availableCores()
 )
 
-# Model has converged, gives stable estimates and reflects nlogit code
 summary(mmnl_costcat)
-
 saveRDS(mmnl_costcat, "./Models/mmnl_categorical.rds")
+# Model has converged, gives stable estimates and reflects nlogit code
+
+# However, continuous cost estimates provide better precision
+# Additionally, it is likely that unobserved variation in preference for screening vs optout exists
+# A random effect for the ASC should improve results' applicability to SG
 
 
-# Cost as a constant
+# Cost as a continuous variable
 mmnl_costcon <- logitr(
   data = df_raw,
   outcome = "choice", # Binary flag for option chosen
@@ -91,33 +100,133 @@ mmnl_costcon <- logitr(
     edu_2 = "n", edu_3 = "n",
     clin_2 = "n", clin_3 = "n",
     wait_2 = "n", wait_3 = "n",
-    asc = "n"
+    asc = "n" # ASC included as random effect
     ), 
-  #numMultiStarts = 10, # try this for asc*relMus or asc*raceMal
   panelID = "record",
-  numDraws = 500,
+  numDraws = 800,
   drawType = "sobol",
+  options = list(
+    ftol_rel = 1e-8,
+    ftol_abs = 1e-8,
+    maxeval = 10000
+  ),
   numCores = parallelly::availableCores()
 )
 
 summary(mmnl_costcon)
+
 # Notes: the large SDs in the random coefficients suggest heterogeneity
-# These could be the parameters that we allow additional payment to handle
-# E.g., extra cost if testing outside marriage, or to speed up wait times to below 16 weeks
+# The large effect size on the random effect SD for the ASC suggests strong heterogeneity in the opt-out
 
 saveRDS(mmnl_costcon, "./Models/mmnl_continuous.rds")
 
 
 # Sensitivity analysis: drop the 12 people who opted out
-optins <- df_raw |> 
+optin_IDs <- df_raw |> 
   group_by(record) |> 
   filter(asc == 1) |> 
   summarise(optouts = sum(choice)) |> 
   filter(optouts < 10) |> 
   pull(record)
 
+optins <- df_raw |>
+  filter(record %in% optin_IDs)
 
+mmnl_costcon_optin <- logitr(
+  data = optins,
+  outcome = "choice", # Binary flag for option chosen
+  obsID = "obsID",
+  pars = c(
+    # Costs as discrete, ref = cost0
+    "cost_con",
+    # When to screen
+    "when_2", "when_3",
+    # How to screen
+    "how_2", "how_3",
+    # Types of conditions to screen
+    "type_2", "type_3", "type_4",
+    # How to receive education on test
+    "edu_2", "edu_3",
+    # Which clinician should deliver screening
+    "clin_2", "clin_3",
+    # Wait times
+    "wait_2", "wait_3",
+    # Alternative-specific constant
+    "asc"
+  ),
+  randPars = c(
+    cost_con = "n",
+    when_2 = "n", when_3 = "n",
+    how_2 = "n", how_3 = "n",
+    type_2 = "n", type_3 = "n", type_4 = "n",
+    edu_2 = "n", edu_3 = "n",
+    clin_2 = "n", clin_3 = "n",
+    wait_2 = "n", wait_3 = "n",
+    asc = "n" # ASC included as random effect
+  ), 
+  panelID = "record",
+  numDraws = 800,
+  drawType = "sobol",
+  options = list(
+    ftol_rel = 1e-8,
+    ftol_abs = 1e-8,
+    maxeval = 10000
+  ),
+  numCores = parallelly::availableCores()
+)
 
-# Sensitivity analysis: run for religion and race, including as fixed effects relative to reference groups (two models)
-# in paper - talk about the religion influence
-# 1st choice - VIH first, maybe 
+summary(mmnl_costcon_optin)
+# Results suggest that preferences for the attributes are mostly unaffected
+# Main change: strong heterogeneity in clinician type picked up in randomm effects in optout
+# Large change in the ASC, 3.83 (all) to 2.90 (opt-in only)
+saveRDS(mmnl_costcon_optin, "./Models/mmnl_continuous_optin_only.rds")
+
+# Sensitivity analysis: run for race, including as fixed effects relative to reference groups (two models)
+df_raw$asc_raceMal <- with(df_raw, asc * raceMal)
+df_raw$asc_raceInd <- with(df_raw, asc * raceInd)
+
+mmnl_costcon_race <- logitr(
+  data = df_raw,
+  outcome = "choice", # Binary flag for option chosen
+  obsID = "obsID",
+  pars = c(
+    # Costs as discrete, ref = cost0
+    "cost_con",
+    # When to screen
+    "when_2", "when_3",
+    # How to screen
+    "how_2", "how_3",
+    # Types of conditions to screen
+    "type_2", "type_3", "type_4",
+    # How to receive education on test
+    "edu_2", "edu_3",
+    # Which clinician should deliver screening
+    "clin_2", "clin_3",
+    # Wait times
+    "wait_2", "wait_3",
+    # Alternative-specific constant
+    "asc", "asc_raceMal", "asc_raceInd"
+  ),
+  randPars = c(
+    cost_con = "n",
+    when_2 = "n", when_3 = "n",
+    how_2 = "n", how_3 = "n",
+    type_2 = "n", type_3 = "n", type_4 = "n",
+    edu_2 = "n", edu_3 = "n",
+    clin_2 = "n", clin_3 = "n",
+    wait_2 = "n", wait_3 = "n",
+    asc = "n" # ASC included as random effect
+  ), 
+  panelID = "record",
+  numDraws = 800,
+  drawType = "sobol",
+  options = list(
+    ftol_rel = 1e-8,
+    ftol_abs = 1e-8,
+    maxeval = 10000
+  ),
+  numCores = parallelly::availableCores()
+)
+
+summary(mmnl_costcon_race)
+# Log-likelihood shows virtually no change. Model can't really detect whether differences exist.
