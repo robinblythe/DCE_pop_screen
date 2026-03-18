@@ -5,7 +5,8 @@ mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 
 # WTP
 wtp_costcon <- wtp(mmnl_costcon, "cost_con")
-rownames(wtp_costcon)[2:14] <- c( # Fix number of attribute levels
+rownames(wtp_costcon)
+rownames(wtp_costcon)[2:14] <- c(
   "Married couples only", "Married couples before conception only",
   "Stepwise screening", "Individual screening",
   "Extremely severe & severe conditions", "Extremely severe, severe & moderate conditions", "All conditions regardless of severity",
@@ -14,7 +15,6 @@ rownames(wtp_costcon)[2:14] <- c( # Fix number of attribute levels
   "Up to 8 weeks wait", "Up to 16 weeks wait"
 )
 
-# Costs in model are divided by 10
 p_wtp <- wtp_costcon[2:14,] |>
   mutate(
     attribute = rownames(wtp_costcon)[2:14],
@@ -92,7 +92,8 @@ single_choice <- bind_rows(choice_sets, optout_set) |>
 predict_uptake <- predict(
   mmnl_costcon,
   newdata = single_choice,
-  obsID = "obsID", 
+  obsID = "obsID",
+  type = "prob",
   returnData = TRUE,
   interval = "confidence"
 ) |>
