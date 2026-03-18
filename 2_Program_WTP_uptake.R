@@ -18,9 +18,9 @@ rownames(wtp_costcon)[2:14] <- c( # Fix number of attribute levels
 p_wtp <- wtp_costcon[2:14,] |>
   mutate(
     attribute = rownames(wtp_costcon)[2:14],
-    wtp_sgd = Estimate * 100,  # Convert to actual SGD
-    ci_lower = (Estimate - 1.96 * `Std. Error`) * 100,
-    ci_upper = (Estimate + 1.96 * `Std. Error`) * 100
+    wtp_sgd = Estimate,  # Convert to actual SGD
+    ci_lower = (Estimate - 1.96 * `Std. Error`),
+    ci_upper = (Estimate + 1.96 * `Std. Error`)
   ) |>
   ggplot(aes(x = reorder(attribute, wtp_sgd), y = wtp_sgd))
 
@@ -40,40 +40,69 @@ write.csv(p_wtp$data[,c("attribute", "wtp_sgd", "ci_lower", "ci_upper")], "./Tab
 ggsave("./Figures/WTP.png", height = 8, width = 12)
 
 
-# Uptake predictions - all
-choice_sets <- expand.grid(
-  cost_con = c(0, 5, 15, 30, 150),
-  when = c(1, 2, 3),
-  how = c(1, 2, 3),
-  type = c(1, 2, 3, 4),
-  edu = c(1, 2, 3),
-  clin = c(1, 2, 3),
-  wait = c(1, 2, 3)
+### Uptake predictions - select groups of interest:
+
+# Option 1: the base-case (cheapest to provide)
+# cost_con == 0 & when_3 == 1 & how_1 == 1 & type_1 == 1 & edu_3 == 1 & clin_3 == 1 & wait_3 == 1
+
+# Option 2: current practice (closest to existing pilot format)
+# cost_con == 0 & when_3 == 1 & how_1 == 1 & type_2 == 1 & edu_2 == 1 & clin_3 == 1 & wait_2 == 1
+
+# Option 3: the "full service" -- all options at maximum utility
+# cost_con == 1500 & when_1 == 1 & how_2 == 1 & type_4 == 1 & edu_1 == 1 & clin_2 == 1 & wait_1 == 1
+
+# Option 4: practical based on service costs (TBD)
+# cost_con == 0 & when_1 == 1 & how_2 == 1 & type_2 == 1 & edu_2 == 1 & clin_3 == 1 & wait_1 == 1
+
+choice_sets <- data.frame(
+  Policy = 1:5,
+  obsID = 1:5,
+  cost_con = c(0, 0, 1500, 0, 0),
+  when_1 = c(0, 0, 1, 1, 0),
+  when_2 = 0,
+  when_3 = c(1, 1, 0, 0, 0),
+  how_1 = c(1, 1, 0, 0, 0),
+  how_2 = c(0, 0, 1, 1, 0),
+  how_3 = 0,
+  type_1 = c(1, 0, 0, 0, 0),
+  type_2 = c(0, 1, 0, 1, 0),
+  type_3 = 0,
+  type_4 = c(0, 0, 1, 0, 0),
+  edu_1 = c(0, 0, 1, 0, 0),
+  edu_2 = c(0, 1, 0, 1, 0),
+  edu_3 = c(1, 0, 0, 0, 0),
+  clin_1 = 0,
+  clin_2 = c(0, 0, 1, 0, 0),
+  clin_3 = c(1, 1, 0, 1, 0),
+  wait_1 = c(0, 0, 1, 1, 0),
+  wait_2 = c(0, 1, 0, 0, 0),
+  wait_3 = c(1, 0, 0, 0, 0),
+  asc = c(0, 0, 0, 0, 1)
 )
-choice_sets$obsID <- 1:nrow(choice_sets)
 
-choices <- fastDummies::dummy_cols(choice_sets, c("when", "how", "type", "edu", "clin", "wait")) |>
-  select(obsID, cost_con, when_1:wait_3)
-choices$asc <- 0
+optout_set <- choice_sets[1:4,]
+optout_set[,3:22] <- 0
+optout_set$asc <- 1
 
-optout <- choices |> select(obsID, cost_con, when_1:wait_3)
-optout[,2:21] <- 0
-optout$asc <- 1
-
-single_choice <- bind_rows(choices, optout) |> 
+# Each option is a trade-off between optin and optout
+single_choice <- bind_rows(choice_sets, optout_set) |> 
   arrange(obsID) 
 
+# Predict uptake for individual program against optout
 predict_uptake <- predict(
   mmnl_costcon,
   newdata = single_choice,
   obsID = "obsID", 
-  returnData = TRUE
+  returnData = TRUE,
+  interval = "confidence"
 ) |>
   filter(asc == 0) |>
   mutate(
-    obsID = obsID,
+    Policy = Policy,
     predicted_uptake = predicted_prob,
-    cost = cost_con * 10,
+    predicted_uptake_lower = predicted_prob_lower,
+    predicted_uptake_upper = predicted_prob_upper,
+    cost = cost_con,
     when = when_1 + when_2 * 2 + when_3 * 3,
     how = how_1 + how_2 * 2 + how_3 * 3,
     type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
@@ -83,61 +112,31 @@ predict_uptake <- predict(
     .keep = "none"
   )
 
+print(predict_uptake, digits = 3)
+write.csv(predict_uptake, file = "./Tables/uptake_vs_optout.csv")
 
+# Now from the full menu of alternatives
+df_alternatives <- choice_sets |>
+  mutate(obsID = 1,
+         Policy = case_when(
+           cost_con == 1500 ~ 3,
+           when_1 == 1 ~ 4,
+           wait_2 == 1 ~ 2,
+           wait_3 == 1 ~ 1,
+           when_1 == 0 ~ 5
+         ))
 
-
-predict_options <- predict(
-  mmnl_coston,
-  newdata = 
-)
-
-remove(choice_sets, choices, optout, single_choice)
-
-
-p_uptake <- bind_rows(
-  predict_uptake |> filter(how == 1, type == 1, edu == 1, clin == 1, wait == 1) |>
-    select(cost, level = when, predicted_uptake) |> mutate(attribute = "When to Screen"),
-  
-  predict_uptake |> filter(when == 1, type == 1, edu == 1, clin == 1, wait == 1) |>
-    select(cost, level = how, predicted_uptake) |> mutate(attribute = "How to Screen"),
-  
-  predict_uptake |> filter(when == 1, how == 1, edu == 1, clin == 1, wait == 1) |>
-    select(cost, level = type, predicted_uptake) |> mutate(attribute = "Condition Type"),
-  
-  predict_uptake |> filter(when == 1, how == 1, type == 1, clin == 1, wait == 1) |>
-    select(cost, level = edu, predicted_uptake) |> mutate(attribute = "Education Method"),
-  
-  predict_uptake |> filter(when == 1, how == 1, type == 1, edu == 1, wait == 1) |>
-    select(cost, level = clin, predicted_uptake) |> mutate(attribute = "Clinician Type"),
-  
-  predict_uptake |> filter(when == 1, how == 1, type == 1, edu == 1, clin == 1) |>
-    select(cost, level = wait, predicted_uptake) |> mutate(attribute = "Wait Time")
+uptake_alternat <- predict(
+  mmnl_costcon, 
+  newdata = df_alternatives, 
+  obsID = "obsID", 
+  type = "prob", 
+  interval = "confidence", 
+  returnData = TRUE
 ) |>
-  ggplot(aes(x = factor(level), y = predicted_uptake, color = attribute, group = attribute))
+  arrange(Policy) |>
+  select(Policy, predicted_prob, predicted_prob_lower, predicted_prob_upper)
 
-p_uptake +
-  geom_line(linewidth = 1) +
-  geom_point(size = 2.5) +
-  facet_wrap(~cost, 
-             labeller = labeller(cost = function(x) paste0("Cost: $", x)), 
-             ncol = 1,
-             scales = "free") +
-  scale_y_continuous(
-    labels = scales::percent,
-    breaks = scales::breaks_pretty(n = 3)
-    ) +
-  scale_colour_viridis_d() +
-  labs(title = "Predicted Uptake by Attribute Level Across Different Costs",
-       x = "Attribute Level",
-       y = "Predicted Uptake Probability",
-       color = "Attribute") +
-  theme_minimal() +
-  theme(legend.position = "bottom",
-        strip.text = element_text(face = "bold"),
-        panel.grid.minor = element_blank())
-
-ggsave("./Figures/uptake_by_attribute.png", height = 10, width = 8)
-
-# maybe try a scatter with cost on one axis and combo of alternatives on other
-
-# Add analysis of 4 alternatives presented together: total uptake including opt-out
+print(uptake_alternat, digits = 3)
+write.csv(uptake_alternat, file = "./Tables/uptake_alternatives.csv")
+  
