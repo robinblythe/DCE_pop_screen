@@ -44,20 +44,27 @@ ggsave("./Figures/WTP.png", height = 8, width = 12)
 
 # Option 1: the base-case (cheapest to provide)
 # cost_con == 0 & when_3 == 1 & how_1 == 1 & type_1 == 1 & edu_3 == 1 & clin_3 == 1 & wait_3 == 1
+# Current WTP for this service is -$364, so free is appropriate
 
 # Option 2: current practice (closest to existing pilot format)
 # cost_con == 0 & when_3 == 1 & how_1 == 1 & type_2 == 1 & edu_2 == 1 & clin_3 == 1 & wait_2 == 1
+# Current WTP for this service is $10, so a very small copayment
 
 # Option 3: the "full service" -- all options at maximum utility
 # cost_con == 1500 & when_1 == 1 & how_2 == 1 & type_4 == 1 & edu_1 == 1 & clin_2 == 1 & wait_1 == 1
+# Current WTP for this service is $579, so a large copayment, but still far less than service cost
 
-# Option 4: practical based on service costs (TBD)
-# cost_con == 0 & when_1 == 1 & how_2 == 1 & type_2 == 1 & edu_2 == 1 & clin_3 == 1 & wait_1 == 1
+# Option 4: practical based on minimising overall cost + copayment
+# cost_con == 0 & when_1 == 1 & how_2 == 1 & type_2 == 1 & edu_3 == 1 & clin_3 == 1 & wait_1 == 1
+# Current WTP for this service is $157
+
+# Next step: calculate overall cost of service provision - copayment for each
+# Option 1: 
 
 choice_sets <- data.frame(
   Policy = 1:5,
   obsID = 1:5,
-  cost_con = c(0, 0, 1500, 0, 0),
+  cost_con = c(0, 10, 579, 157, 0),
   when_1 = c(0, 0, 1, 1, 0),
   when_2 = 0,
   when_3 = c(1, 1, 0, 0, 0),
@@ -69,8 +76,8 @@ choice_sets <- data.frame(
   type_3 = 0,
   type_4 = c(0, 0, 1, 0, 0),
   edu_1 = c(0, 0, 1, 0, 0),
-  edu_2 = c(0, 1, 0, 1, 0),
-  edu_3 = c(1, 0, 0, 0, 0),
+  edu_2 = c(0, 1, 0, 0, 0),
+  edu_3 = c(1, 0, 0, 1, 0),
   clin_1 = 0,
   clin_2 = c(0, 0, 1, 0, 0),
   clin_3 = c(1, 1, 0, 1, 0),
@@ -135,9 +142,21 @@ uptake_alternat <- predict(
   interval = "confidence", 
   returnData = TRUE
 ) |>
-  arrange(Policy) |>
-  select(Policy, predicted_prob, predicted_prob_lower, predicted_prob_upper)
-
+  mutate(
+    Policy = Policy,
+    predicted_uptake = predicted_prob,
+    predicted_uptake_lower = predicted_prob_lower,
+    predicted_uptake_upper = predicted_prob_upper,
+    cost = cost_con,
+    when = when_1 + when_2 * 2 + when_3 * 3,
+    how = how_1 + how_2 * 2 + how_3 * 3,
+    type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
+    edu = edu_1 + edu_2 * 2 + edu_3 * 3,
+    clin = clin_1 + clin_2 * 2 + clin_3 * 3,
+    wait = wait_1 + wait_2 * 2 + wait_3 * 3,
+    .keep = "none"
+  )
+  
 print(uptake_alternat, digits = 3)
 write.csv(uptake_alternat, file = "./Tables/uptake_alternatives.csv")
   
