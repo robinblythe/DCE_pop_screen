@@ -1,0 +1,153 @@
+---
+title: "Analysis summary for DCE of general public preferences for ECS"
+format: docx
+editor: visual
+---
+
+## Background
+
+In this study, we surveyed Singaporeans under age 54 to understand their views on preferences for Expanded Carrier Screening (ECS) among the general population. The intention of this study was to determine the willingness-to-pay (WTP) for or participate in ECS to reduce the rate of severe autosomal recessive conditions in children born to Singaporean citizens or permanent residents.
+
+### Research questions:
+
+1.  What are the population-level preferences for ECS, expressed across a range of screening program attributes?
+2.  What are individuals willing to pay, in the form of copayment, for each attribute and for different programs overall?
+3.  What is the budgetary impact of ECS at the national level?
+
+```{r, include = FALSE}
+library(logitr)
+library(tidyverse)
+library(flextable)
+mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
+```
+
+## Methods and results
+
+In our study, 500 participants were randomised to one of four blocks. Pre-questionnaire screening was used to exclude participants who believed that screening was morally wrong and should not be available in Singapore. We engaged Kantar, a market research company, to conduct the survey. The rate of Singaporeans who agreed that screening should be available was approximately 95%.
+
+In the questionnaire, each choice task had three options, with two pertaining to carrier screening programs, and the other being an opt-out. Participants participated in 10 choice tasks each. We applied a mixed multinomial logit (MMNL) model. We included all attributes as fixed effects, including the alternative-specific constant (ASC), and random effects, assuming that all random effects were normally distributed.
+
+For sensitivity analysis, we excluded participants who always opted out (N = 12), though this did not affect model coefficients. We also assessed whether Malay or Indian participants (both N = 50) may have had heterogeneous preferences for the opt-out by interacting categorical race variables with the ASC. The log-Likelihood was nearly identical between models with and without interaction terms, indicating that these differences were already incorporated within the random effects.
+
+Results of the continuous model:
+
+```{r}
+print(summary(mmnl_costcon)$coefTable, digits = 3)
+```
+
+#### Interpretation:
+
+Respondents exhibited preferences for:
+
+-   Lower copayments
+
+-   Less restrictive screening eligibility (preferred screening at any time)
+
+-   More conditions screened
+
+-   Speaking to a clinician both before and after screening
+
+-   Shorter wait times
+
+There were not strong signals for preferences for stepwise compared to couples screening or for the clinician overseeing the screening process (including genetics counsellors). These may represent potential savings for the health system if the program is routed through genetics counsellors or a stepwise screening process.
+
+### Model validation
+
+We assessed cost as a categorical and continuous variable, choosing the latter due to enhanced precision. Distributional assumptions were checked, and the normal distribution was considered suitable for all random parameters. We used Sobol draws, reducing tolerance for the relative and absolute stopping criteria based on the log-likelihood to prevent the model from early stopping and ensure convergence. There were minimal differences in effect sizes and standard errors (below 0.02 for all categorical variables) between 500 and 800 Sobol draws, indicating the model had converged.
+
+### WTP valuation and program costs
+
+The model was used to derive WTP for each attribute level, relative to the reference category. Negative WTP is associated with disutility, and individuals may need to be compensated to accept this choice, or may opt out of screening entirely. To derive WTP, each coefficient was divided by the negative value of the price coefficient. We assumed that effects were normally distributed and obtained confidence intervals by multiplying the standard error by +/- 1.96.
+
+```{r, echo = FALSE}
+#| fig-width: 6
+#| fig-height: 4
+#| out-width: "100%"
+
+wtp_costcon <- wtp(mmnl_costcon, "cost_con")
+rownames(wtp_costcon)[2:14] <- c(
+  "Married couples only", "Married couples before conception only",
+  "Stepwise screening", "Individual screening",
+  "Extremely severe & severe conditions", "Extremely severe, severe & moderate conditions", "All conditions regardless of severity",
+  "In-person appointments only if test positive", "Online/written materials only",
+  "GP/polyclinic", "Genetics counsellor",
+  "Up to 8 weeks wait", "Up to 16 weeks wait"
+)
+
+p_wtp <- wtp_costcon[2:14,] |>
+  mutate(
+    attribute = rownames(wtp_costcon)[2:14],
+    wtp_sgd = Estimate,  # Convert to actual SGD
+    ci_lower = (Estimate - 1.96 * `Std. Error`),
+    ci_upper = (Estimate + 1.96 * `Std. Error`)
+  ) |>
+  ggplot(aes(x = reorder(attribute, wtp_sgd), y = wtp_sgd))
+
+p_wtp +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(-300, 700), breaks = seq(-300, 700, 100)) +
+  coord_flip() +
+  labs(x = NULL, y = "WTP (SGD)") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+```
+
+Our results show that WTP is greatest for including more conditions, with participants willing to pay around \$511 \[95% CI: \$384 to \$637\] to include all screening options. Conversely, individuals felt that they would need to be compensated to accept a 16 week wait time. In the context of this analysis, negative WTP values imply individuals would need to be compensated to accept this policy, due to the framing of the reference category. These costs relative to the overall cost of services are described below.
+
+```{r, echo = FALSE}
+source("./99_utils.R") |> suppressWarnings()
+service_costs |>
+  flextable() |>
+  colformat_double(digits = 2) |>
+  fit_to_width(max_width = 6.5) |>
+  fontsize(size = 10) |>
+  theme_booktabs() |>
+  add_footer_lines("Note: Reference categories set to 0. All values in 2025 Singapore dollars (SGD)")
+```
+
+### Proposed copayments and uptake of respective programs
+
+Based on our results, we can propose a variety of competing programs.
+
+-   Option 1: Base-case, cheapest to provide. WTP for this service is -\$365 so it would be free of charge, and people could choose not to take it up. The marginal cost to the health system would be \$98 per couple, given the lack of willingness to accept copayments.
+
+-   Option 2: Current practice, or as close to the existing pilot study as we can get. WTP for this service is \$9, a very small copayment. The marginal cost per couple would be \$458.
+
+-   Option 3: The "full service" which aims to maximise utility. Based on WTP, the maximum individuals would pay is \$466; far less than the cost of service provision (\$2,347 per couple).
+
+-   Option 4: A practical choice based on minimising overall service costs. Couples would be willing to pay \$202 for this service, and the health system cost would be minimised at \$93 per couple, after copayment. The health service could save around \$15 per couple by providing written materials only, and requesting couples visit a counselling service out-of-pocket (or through insurance) though this policy would likely be unpopular.
+
+```{r, echo = FALSE}
+read.csv("./Tables/uptake_vs_optout.csv") |>
+  select(-X) |>
+  flextable() |>
+  set_header_labels(
+    predicted_uptake = "Predicted uptake",
+    predicted_uptake_lower = "Predicted uptake (lower)",
+    predicted_uptake_upper = "Predicted uptake (upper)",
+    WTP = "Willingness-to-pay (SGD)",
+    Program_cost = "Program cost per couple (SGD)",
+    Marginal_health_system_cost = "Marginal health system cost per couple (SGD)"
+  ) |>
+  colformat_double(digits = 2) |>
+  fit_to_width(max_width = 6.5) |>
+  fontsize(size = 10) |>
+  theme_booktabs() |>
+  add_footer_lines("Note: Uptake is predicted relative to opting out. All costs in 2025 Singapore dollars (SGD)")
+```
+
+### Program uptake at different WTP levels and overall budget impact
+
+We can provide a "menu" of alternatives to determine what the estimated spread would be, given levels of screening were available. If I can get estimates of numbers of eligible couples, we can populate this table. It also assumes there is no incremental cost for lower wait times - these would presumably be filled by a new lab sector.
+
+```{r, echo = FALSE}
+read.csv("./Tables/uptake_alternatives.csv") |>
+  select(-X) |>
+  flextable() |>
+  colformat_double(digits = 2) |>
+  fontsize(size = 10) |>
+  fit_to_width(max_width = 6.5) |>
+  theme_booktabs()
+```

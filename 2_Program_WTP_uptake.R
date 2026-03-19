@@ -64,7 +64,7 @@ ggsave("./Figures/WTP.png", height = 8, width = 12)
 choice_sets <- data.frame(
   Policy = 1:5,
   obsID = 1:5,
-  cost_con = c(0, 10, 579, 157, 0),
+  cost_con = c(0, 9, 466, 202, 0),
   when_1 = c(0, 0, 1, 1, 0),
   when_2 = 0,
   when_3 = c(1, 1, 0, 0, 0),
@@ -76,8 +76,8 @@ choice_sets <- data.frame(
   type_3 = 0,
   type_4 = c(0, 0, 1, 0, 0),
   edu_1 = c(0, 0, 1, 0, 0),
-  edu_2 = c(0, 1, 0, 0, 0),
-  edu_3 = c(1, 0, 0, 1, 0),
+  edu_2 = c(0, 1, 0, 1, 0),
+  edu_3 = c(1, 0, 0, 0, 0),
   clin_1 = 0,
   clin_2 = c(0, 0, 1, 0, 0),
   clin_3 = c(1, 1, 0, 1, 0),
@@ -110,7 +110,7 @@ predict_uptake <- predict(
     predicted_uptake = predicted_prob,
     predicted_uptake_lower = predicted_prob_lower,
     predicted_uptake_upper = predicted_prob_upper,
-    cost = cost_con,
+    WTP = cost_con,
     when = when_1 + when_2 * 2 + when_3 * 3,
     how = how_1 + how_2 * 2 + how_3 * 3,
     type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
@@ -120,19 +120,28 @@ predict_uptake <- predict(
     .keep = "none"
   )
 
-print(predict_uptake, digits = 3)
-write.csv(predict_uptake, file = "./Tables/uptake_vs_optout.csv")
+costs <- c(98, 468, 2813, 296)
+uptake <- predict_uptake |>
+  select(Policy, predicted_uptake, predicted_uptake_lower, predicted_uptake_upper, WTP) |>
+  mutate(Program_cost = costs,
+         Marginal_health_system_cost = costs - WTP
+         )
+
+print(uptake, digits = 3)
+write.csv(uptake, file = "./Tables/uptake_vs_optout.csv")
 
 # Now from the full menu of alternatives
 df_alternatives <- choice_sets |>
+  filter(Policy != 3) |>
   mutate(obsID = 1,
          Policy = case_when(
-           cost_con == 1500 ~ 3,
-           when_1 == 1 ~ 4,
+           wait_1 == 1 ~ 4,
            wait_2 == 1 ~ 2,
            wait_3 == 1 ~ 1,
-           when_1 == 0 ~ 5
+           when_1 == 0 ~ NA_real_
          ))
+
+costs_alts <- c(98, 468, 296, 0)
 
 uptake_alternat <- predict(
   mmnl_costcon, 
@@ -147,15 +156,20 @@ uptake_alternat <- predict(
     predicted_uptake = predicted_prob,
     predicted_uptake_lower = predicted_prob_lower,
     predicted_uptake_upper = predicted_prob_upper,
-    cost = cost_con,
+    WTP = cost_con,
     when = when_1 + when_2 * 2 + when_3 * 3,
     how = how_1 + how_2 * 2 + how_3 * 3,
     type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
     edu = edu_1 + edu_2 * 2 + edu_3 * 3,
     clin = clin_1 + clin_2 * 2 + clin_3 * 3,
     wait = wait_1 + wait_2 * 2 + wait_3 * 3,
+    Estimated_eligible_population = NA_real_,
+    Budget_impact = costs_alts * Estimated_eligible_population * predicted_uptake,
+    Budget_impact_low = costs_alts * Estimated_eligible_population * predicted_uptake_lower,
+    Budget_impact_high = costs_alts * Estimated_eligible_population * predicted_uptake_upper,
     .keep = "none"
-  )
+  ) |>
+  select(Policy:WTP, Estimated_eligible_population:Budget_impact_high)
   
 print(uptake_alternat, digits = 3)
 write.csv(uptake_alternat, file = "./Tables/uptake_alternatives.csv")
