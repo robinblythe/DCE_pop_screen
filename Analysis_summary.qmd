@@ -39,9 +39,7 @@ print(summary(mmnl_costcon)$coefTable, digits = 3)
 
 Respondents exhibited preferences for:
 
--   Lower copayments
-
--   Less restrictive screening eligibility (preferred screening at any time)
+-   Screening available at any time
 
 -   More conditions screened
 
@@ -66,12 +64,12 @@ The model was used to derive WTP for each attribute level, relative to the refer
 
 wtp_costcon <- wtp(mmnl_costcon, "cost_con")
 rownames(wtp_costcon)[2:14] <- c(
-  "Married couples only", "Married couples before conception only",
+  "Screening available at any time", "Married couples only",
   "Stepwise screening", "Individual screening",
   "Extremely severe & severe conditions", "Extremely severe, severe & moderate conditions", "All conditions regardless of severity",
-  "In-person appointments only if test positive", "Online/written materials only",
-  "GP/polyclinic", "Genetics counsellor",
-  "Up to 8 weeks wait", "Up to 16 weeks wait"
+  "In-person appointment pre and post-test", "In-person appointment only for positive tests",
+  "OB/GYN", "GP/polyclinic",
+  "Up to 4 weeks wait", "Up to 8 weeks wait"
 )
 
 p_wtp <- wtp_costcon[2:14,] |>
@@ -107,30 +105,48 @@ service_costs |>
   add_footer_lines("Note: Reference categories set to 0. All values in 2025 Singapore dollars (SGD)")
 ```
 
+### WTP calculations per policy
+
+```{r}
+wtp_est <- wtp(mmnl_costcon, "cost_con")
+# Base case: policy 1 has no incremental WTP because it is the reference category
+
+# Policy number 2: Closest to existing pilot
+# when = Ref & how = Ref & type = 2 & edu = 2 & clin = Ref & wait = 2
+round(wtp_est["type_2", "Estimate"] + wtp_est["edu_2", "Estimate"] + wtp_est["wait_2", "Estimate"])
+
+# Policy number 3:
+# when = 3 & how = 2 & type = 2 & edu = 3 & clin = 3 & wait = 1
+round(wtp_est["how_2", "Estimate"] + wtp_est["type_2", "Estimate"] + wtp_est["edu_2", "Estimate"] + wtp_est["wait_1", "Estimate"])
+
+# Policy number 4:
+# when = 1 & how = 2 & type = 4 & edu = 1 & clin = 2 & wait = 1
+round(wtp_est["when_1", "Estimate"] + wtp_est["how_2", "Estimate"] + wtp_est["type_4", "Estimate"] +
+        wtp_est["edu_1", "Estimate"] + wtp_est["clin_2", "Estimate"] + wtp_est["wait_1", "Estimate"])
+```
+
 ### Proposed copayments and uptake of respective programs
 
 Based on our results, we can propose a variety of competing programs.
 
--   Option 1: Base-case, cheapest to provide. WTP for this service is -\$365 so it would be free of charge, and people could choose not to take it up. The marginal cost to the health system would be \$98 per couple, given the lack of willingness to accept copayments.
+-   Option 1: Base-case, cheapest to provide. It is the reference category, so there is no incremental willingness-to-pay.
 
--   Option 2: Current practice, or as close to the existing pilot study as we can get. WTP for this service is \$9, a very small copayment. The marginal cost per couple would be \$458.
+-   Option 2: Current practice, or as close to the existing pilot study as we can get. Note that there is no incremental cost for this service. WTP is \$346.
 
--   Option 3: The "full service" which aims to maximise utility. Based on WTP, the maximum individuals would pay is \$466; far less than the cost of service provision (\$2,347 per couple).
+-   Option 3: The "full service" option. The cost of this service is \$2573, far exceeding the WTP of \$972. This service should not be provided.
 
--   Option 4: A practical choice based on minimising overall service costs. Couples would be willing to pay \$202 for this service, and the health system cost would be minimised at \$93 per couple, after copayment. The health service could save around \$15 per couple by providing written materials only, and requesting couples visit a counselling service out-of-pocket (or through insurance) though this policy would likely be unpopular.
+-   Option 4: A practical choice based on maximising utility for low incremental costs. This policy is nearly identical to policy 2 except that it aims for a 4 week turnaround and uses stepwise testing. The WTP is \$454, with no incremental service costs assuming a 4 week turnaround is sustainable.
 
 ```{r, echo = FALSE}
 read.csv("./Tables/uptake_vs_optout.csv") |>
   select(-X) |>
   flextable() |>
   set_header_labels(
-    predicted_uptake = "Predicted uptake",
-    predicted_uptake_lower = "Predicted uptake (lower)",
-    predicted_uptake_upper = "Predicted uptake (upper)",
-    WTP = "Willingness-to-pay (SGD)",
-    Program_cost = "Program cost per couple (SGD)",
-    Marginal_health_system_cost = "Marginal health system cost per couple (SGD)"
-  ) |>
+    Predicted.uptake = "Predicted uptake",
+    Predicted.uptake..lower = "Predicted uptake (lower)",
+    Predicted.uptake..upper = "Predicted uptake (upper)",
+    WTP..SGD. = "WTP (SGD)"
+    ) |>
   colformat_double(digits = 2) |>
   fit_to_width(max_width = 6.5) |>
   fontsize(size = 10) |>

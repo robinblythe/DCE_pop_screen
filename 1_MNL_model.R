@@ -67,6 +67,7 @@ saveRDS(mmnl_costcat, "./Models/mmnl_categorical.rds")
 # However, continuous cost estimates provide better precision
 # Additionally, it is likely that unobserved variation in preference for screening vs optout exists
 # A random effect for the ASC should improve results' applicability to SG
+# Finally, switch the effects to their lowest level
 
 
 # Cost as a continuous variable
@@ -75,31 +76,31 @@ mmnl_costcon <- logitr(
   outcome = "choice", # Binary flag for option chosen
   obsID = "obsID",
   pars = c(
-    # Costs as discrete, ref = cost0
+    # Costs as continuous
     "cost_con",
-    # When to screen
-    "when_2", "when_3",
-    # How to screen
+    # When to screen: Ref = 3
+    "when_1", "when_2",
+    # How to screen, Ref = 1
     "how_2", "how_3",
-    # Types of conditions to screen
+    # Types of conditions to screen, Ref = 1
     "type_2", "type_3", "type_4",
-    # How to receive education on test
-    "edu_2", "edu_3",
-    # Which clinician should deliver screening
-    "clin_2", "clin_3",
-    # Wait times
-    "wait_2", "wait_3",
+    # How to receive education on test, Ref = 3
+    "edu_1", "edu_2",
+    # Which clinician should deliver screening, Ref = 3
+    "clin_1", "clin_2",
+    # Wait times, Ref = 3
+    "wait_1", "wait_2",
     # Alternative-specific constant
     "asc"
   ),
   randPars = c(
     cost_con = "n",
-    when_2 = "n", when_3 = "n",
+    when_1 = "n", when_2 = "n",
     how_2 = "n", how_3 = "n",
     type_2 = "n", type_3 = "n", type_4 = "n",
-    edu_2 = "n", edu_3 = "n",
-    clin_2 = "n", clin_3 = "n",
-    wait_2 = "n", wait_3 = "n",
+    edu_1 = "n", edu_2 = "n",
+    clin_1 = "n", clin_2 = "n",
+    wait_1 = "n", wait_2 = "n",
     asc = "n" # ASC included as random effect
     ), 
   panelID = "record",
@@ -110,7 +111,8 @@ mmnl_costcon <- logitr(
     ftol_abs = 1e-8,
     maxeval = 10000
   ),
-  numCores = parallelly::availableCores()
+  numCores = parallelly::availableCores(),
+  numMultiStarts = 10
 )
 
 summary(mmnl_costcon)
@@ -137,31 +139,31 @@ mmnl_costcon_optin <- logitr(
   outcome = "choice", # Binary flag for option chosen
   obsID = "obsID",
   pars = c(
-    # Costs as discrete, ref = cost0
+    # Costs as continuous
     "cost_con",
-    # When to screen
-    "when_2", "when_3",
-    # How to screen
+    # When to screen: Ref = 3
+    "when_1", "when_2",
+    # How to screen, Ref = 1
     "how_2", "how_3",
-    # Types of conditions to screen
+    # Types of conditions to screen, Ref = 1
     "type_2", "type_3", "type_4",
-    # How to receive education on test
-    "edu_2", "edu_3",
-    # Which clinician should deliver screening
-    "clin_2", "clin_3",
-    # Wait times
-    "wait_2", "wait_3",
+    # How to receive education on test, Ref = 3
+    "edu_1", "edu_2",
+    # Which clinician should deliver screening, Ref = 3
+    "clin_1", "clin_2",
+    # Wait times, Ref = 3
+    "wait_1", "wait_2",
     # Alternative-specific constant
     "asc"
   ),
   randPars = c(
     cost_con = "n",
-    when_2 = "n", when_3 = "n",
+    when_1 = "n", when_2 = "n",
     how_2 = "n", how_3 = "n",
     type_2 = "n", type_3 = "n", type_4 = "n",
-    edu_2 = "n", edu_3 = "n",
-    clin_2 = "n", clin_3 = "n",
-    wait_2 = "n", wait_3 = "n",
+    edu_1 = "n", edu_2 = "n",
+    clin_1 = "n", clin_2 = "n",
+    wait_1 = "n", wait_2 = "n",
     asc = "n" # ASC included as random effect
   ), 
   panelID = "record",
@@ -172,13 +174,13 @@ mmnl_costcon_optin <- logitr(
     ftol_abs = 1e-8,
     maxeval = 10000
   ),
-  numCores = parallelly::availableCores()
+  numCores = parallelly::availableCores(),
+  numMultiStarts = 10
 )
 
 summary(mmnl_costcon_optin)
 # Results suggest that preferences for the attributes are mostly unaffected
 # Main change: strong heterogeneity in clinician type picked up in randomm effects in optout
-# Large change in the ASC, 3.83 (all) to 2.90 (opt-in only)
 saveRDS(mmnl_costcon_optin, "./Models/mmnl_continuous_optin_only.rds")
 
 # Sensitivity analysis: run for race, including as fixed effects relative to reference groups (two models)
@@ -190,31 +192,31 @@ mmnl_costcon_race <- logitr(
   outcome = "choice", # Binary flag for option chosen
   obsID = "obsID",
   pars = c(
-    # Costs as discrete, ref = cost0
+    # Costs as continuous
     "cost_con",
-    # When to screen
-    "when_2", "when_3",
-    # How to screen
+    # When to screen: Ref = 3
+    "when_1", "when_2",
+    # How to screen, Ref = 1
     "how_2", "how_3",
-    # Types of conditions to screen
+    # Types of conditions to screen, Ref = 1
     "type_2", "type_3", "type_4",
-    # How to receive education on test
-    "edu_2", "edu_3",
-    # Which clinician should deliver screening
-    "clin_2", "clin_3",
-    # Wait times
-    "wait_2", "wait_3",
+    # How to receive education on test, Ref = 3
+    "edu_1", "edu_2",
+    # Which clinician should deliver screening, Ref = 3
+    "clin_1", "clin_2",
+    # Wait times, Ref = 3
+    "wait_1", "wait_2",
     # Alternative-specific constant
     "asc", "asc_raceMal", "asc_raceInd"
   ),
   randPars = c(
     cost_con = "n",
-    when_2 = "n", when_3 = "n",
+    when_1 = "n", when_2 = "n",
     how_2 = "n", how_3 = "n",
     type_2 = "n", type_3 = "n", type_4 = "n",
-    edu_2 = "n", edu_3 = "n",
-    clin_2 = "n", clin_3 = "n",
-    wait_2 = "n", wait_3 = "n",
+    edu_1 = "n", edu_2 = "n",
+    clin_1 = "n", clin_2 = "n",
+    wait_1 = "n", wait_2 = "n",
     asc = "n" # ASC included as random effect
   ), 
   panelID = "record",
@@ -225,7 +227,8 @@ mmnl_costcon_race <- logitr(
     ftol_abs = 1e-8,
     maxeval = 10000
   ),
-  numCores = parallelly::availableCores()
+  numCores = parallelly::availableCores(),
+  numMultiStarts = 10
 )
 
 summary(mmnl_costcon_race)
