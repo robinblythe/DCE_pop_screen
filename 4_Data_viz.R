@@ -64,22 +64,29 @@ p_uptake +
 
 ggsave("./Figures/predicted_uptake_optout.png", height = 6, width = 8)
 
-# Now as a function of possible alternatives
-len <- nrow(read.csv("./Tables/uptake_alts.csv"))
-p_alts <- read.csv("./Tables/uptake_alts.csv") |>
-  mutate(sim = rep(1:len, each = 4)) |>
+# Uptake as a function of possible alternatives
+dat <- read.csv("./Tables/uptake_alts.csv")
+dat$WTP[dat$Policy == 4] <- unique(dat$WTP)
+
+p_alts <- dat |>
   select(Policy, predicted_uptake:WTP) |>
-  mutate(Policy = factor(Policy, labels = c("Basic screening", "Pilot continuation", "Utility-maximising", "Opt-out")),
-         ) |>
+  mutate(Policy = factor(Policy, labels = c("Basic screening", "Pilot continuation", "Utility-maximising", "Opt-out"))) |>
   ggplot()
   
 p_alts +
   geom_area(aes(x = WTP, y = predicted_uptake, fill = Policy), position = "stack") +
-  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  scale_fill_manual(values = c(
+    "Basic screening" = "#E69F00", 
+    "Pilot continuation" = "#56B4E9", 
+    "Utility-maximising" = "#0072B2",
+    "Opt-out" = "#999999"
+    )) +
   theme_minimal() +
-  theme(panel.grid.minor = element_blank())
+  theme(panel.grid.minor = element_blank()) +
+  labs(x = "Willingness-to-pay for screening (SGD)",
+       y = "Predicted uptake by program")
 
-
+ggsave("./Figures/predicted_uptake_alternatives.png", height = 5, width = 7)
 
 
 
