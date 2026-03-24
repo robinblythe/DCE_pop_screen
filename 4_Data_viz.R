@@ -1,6 +1,49 @@
 library(tidyverse)
 library(logitr)
 
+mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
+
+# WTP
+wtp_costcon <- wtp(mmnl_costcon, "cost_con")
+rownames(wtp_costcon)
+rownames(wtp_costcon)[2:14] <- c(
+  "Screening available at any time", "Married couples only",
+  "Stepwise screening", "Individual screening",
+  "Extremely severe & severe conditions", "Extremely severe, severe & moderate conditions", "All conditions regardless of severity",
+  "In-person appointment pre and post-test", "In-person appointment only for positive tests",
+  "OB/GYN", "GP/polyclinic",
+  "Up to 4 weeks wait", "Up to 8 weeks wait"
+)
+
+p_wtp <- wtp_costcon[2:14,] |>
+  mutate(
+    attribute = rownames(wtp_costcon)[2:14],
+    wtp_sgd = Estimate,  # Convert to actual SGD
+    ci_lower = (Estimate - 1.96 * `Std. Error`),
+    ci_upper = (Estimate + 1.96 * `Std. Error`)
+  ) |>
+  ggplot(aes(x = reorder(attribute, wtp_sgd), y = wtp_sgd))
+
+p_wtp +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(-200, 700), breaks = seq(-200, 700, 100)) +
+  coord_flip() +
+  labs(x = NULL, y = "WTP (SGD)") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+
+print(p_wtp$data)
+
+# Save wtp results as table
+write.csv(p_wtp$data[,c("attribute", "wtp_sgd", "ci_lower", "ci_upper")], "./Tables/wtp_results.csv", row.names = FALSE)
+# As figure
+ggsave("./Figures/WTP.png", height = 8, width = 12)
+
+
+#########
+# Uptake
 p_uptake <- read.csv("./Tables/uptake_vs_optout.csv") |>
   select(-X) |>
   mutate(Policy = factor(Policy)) |>
@@ -17,11 +60,35 @@ p_uptake +
   guides(fill = "none") +
   theme(panel.grid.minor = element_blank()) +
   labs(x = "Willingness-to-pay for screening (SGD)",
-       y = "Predicted uptake")
+       y = "Predicted uptake (compared to opt-out)")
+
 ggsave("./Figures/predicted_uptake_optout.png", height = 6, width = 8)
 
+# Now as a function of possible alternatives
+len <- nrow(read.csv("./Tables/uptake_alts.csv"))
+p_alts <- read.csv("./Tables/uptake_alts.csv") |>
+  mutate(sim = rep(1:len, each = 4)) |>
+  select(Policy, predicted_uptake:WTP) |>
+  mutate(Policy = factor(Policy, labels = c("Basic screening", "Pilot continuation", "Utility-maximising", "Opt-out")),
+         ) |>
+  ggplot()
+  
+p_alts +
+  geom_area(aes(x = WTP, y = predicted_uptake, fill = Policy), position = "stack") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
 
-mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
+
+
+
+
+
+
+
+
+
+
 
 choice_sets <- expand.grid(
   cost_con = c(0, 50, 150, 300, 1500),

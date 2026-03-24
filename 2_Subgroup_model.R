@@ -2,8 +2,11 @@ library(logitr)
 
 df_prepared <- readRDS("./Data/df_prepared.RDS")
 
-# Cost as a continuous variable
-mmnl_costcon <- logitr(
+# Sensitivity analysis: run for race, including as fixed effects relative to reference groups (two models)
+df_prepared$asc_raceMal <- with(df_prepared, asc * raceMal)
+df_prepared$asc_raceInd <- with(df_prepared, asc * raceInd)
+
+mmnl_costcon_race <- logitr(
   data = df_prepared,
   outcome = "choice", # Binary flag for option chosen
   obsID = "obsID",
@@ -23,7 +26,7 @@ mmnl_costcon <- logitr(
     # Wait times, Ref = 3
     "wait_1", "wait_2",
     # Alternative-specific constant
-    "asc"
+    "asc", "asc_raceMal", "asc_raceInd"
   ),
   randPars = c(
     cost_con = "n",
@@ -34,7 +37,7 @@ mmnl_costcon <- logitr(
     clin_1 = "n", clin_2 = "n",
     wait_1 = "n", wait_2 = "n",
     asc = "n" # ASC included as random effect
-    ), 
+  ), 
   panelID = "record",
   numDraws = 800,
   drawType = "sobol",
@@ -47,10 +50,5 @@ mmnl_costcon <- logitr(
   numMultiStarts = 10
 )
 
-summary(mmnl_costcon)
-
-# Notes: the large SDs in the random coefficients suggest heterogeneity
-# The large effect size on the random effect SD for the ASC suggests strong heterogeneity in the opt-out
-
-saveRDS(mmnl_costcon, "./Models/mmnl_continuous.rds")
-
+summary(mmnl_costcon_race)
+# Log-likelihood shows virtually no change. Model can't really detect whether differences exist.

@@ -4,45 +4,6 @@ library(tidyverse)
 
 mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 
-# WTP
-wtp_costcon <- wtp(mmnl_costcon, "cost_con")
-rownames(wtp_costcon)
-rownames(wtp_costcon)[2:14] <- c(
-  "Screening available at any time", "Married couples only",
-  "Stepwise screening", "Individual screening",
-  "Extremely severe & severe conditions", "Extremely severe, severe & moderate conditions", "All conditions regardless of severity",
-  "In-person appointment pre and post-test", "In-person appointment only for positive tests",
-  "OB/GYN", "GP/polyclinic",
-  "Up to 4 weeks wait", "Up to 8 weeks wait"
-)
-
-p_wtp <- wtp_costcon[2:14,] |>
-  mutate(
-    attribute = rownames(wtp_costcon)[2:14],
-    wtp_sgd = Estimate,  # Convert to actual SGD
-    ci_lower = (Estimate - 1.96 * `Std. Error`),
-    ci_upper = (Estimate + 1.96 * `Std. Error`)
-  ) |>
-  ggplot(aes(x = reorder(attribute, wtp_sgd), y = wtp_sgd))
-
-p_wtp +
-  geom_point(size = 3) +
-  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  scale_y_continuous(limits = c(-200, 700), breaks = seq(-200, 700, 100)) +
-  coord_flip() +
-  labs(x = NULL, y = "WTP (SGD)") +
-  theme_minimal() +
-  theme(panel.grid.minor = element_blank())
-
-print(p_wtp$data)
-
-# Save wtp results as table
-write.csv(p_wtp$data[,c("attribute", "wtp_sgd", "ci_lower", "ci_upper")], "./Tables/wtp_results.csv", row.names = FALSE)
-# As figure
-ggsave("./Figures/WTP.png", height = 8, width = 12)
-
-
 ### Uptake predictions - select groups of interest:
 
 # Option 1: the base-case (cheapest to provide)
@@ -55,17 +16,8 @@ ggsave("./Figures/WTP.png", height = 8, width = 12)
 # Option 3: practical based on minimising overall cost + copayment
 # cost_con == 0 & when_1 == 1 & how_2 == 1 & type_2 == 1 & edu_3 == 1 & clin_3 == 1 & wait_1 == 1
 
-# Option 4: the "full service" -- all options at maximum utility
-# cost_con == 1500 & when_1 == 1 & how_2 == 1 & type_4 == 1 & edu_1 == 1 & clin_2 == 1 & wait_1 == 1
-
-# Option 4 should be discarded due to the high testing cost.
-
-# We now have a few options for how to predict uptake
-# The most ethical thing would be simply to limit the copayment to the additional charges individuals might incur.
-# For policy options 2 & 4, this is the cost of an additional consult ($37.50 for a citizen):
-
 # Want to know uptake by copayment:
-# Get the choice sets below, but repeat for every combination of costs from 0:1000
+# Get the choice sets below, but repeat for every combination of costs from 0:C, where C = some reasonable copayment
 choice_sets <- data.frame(
   Policy = 1:3,
   obsID = 1:3,
@@ -92,21 +44,21 @@ choice_sets <- data.frame(
   asc = c(0, 0, 0)
 )
 
-# Vector of costs
+# Vector of copayment amounts
 cost_values <- seq(0, 500, 10)
 
 # Number of alternatives per original choice set
 n_alts <- nrow(choice_sets)
 
-# Repeat the original dataset for each cost
+# Repeat the original dataset for each copay
 expanded_choice_sets <- choice_sets[rep(1:n_alts, times = length(cost_values)), ]
 expanded_choice_sets$cost_con <- rep(cost_values, each = n_alts)
 expanded_choice_sets$obsID <- 1:nrow(expanded_choice_sets)
 
+# Create the optout choice
 single_choice <- rbind(expanded_choice_sets, expanded_choice_sets)
 single_choice[(nrow(expanded_choice_sets)+1):nrow(single_choice), 3:22] <- 0
 single_choice[(nrow(expanded_choice_sets)+1):nrow(single_choice), 23] <- 1
-
 single_choice <- single_choice |> arrange(obsID, Policy)
 
 # Predict uptake for individual program against optout, assuming copayments apply
@@ -133,7 +85,6 @@ predicted_uptake <- predict(
     wait = wait_1 + wait_2 * 2 + wait_3 * 3,
     .keep = "none"
   )
-
 
 print(predicted_uptake, digits = 3, row.names = FALSE)
 write.csv(predicted_uptake, file = "./Tables/uptake_vs_optout.csv")
@@ -195,6 +146,4 @@ uptake_alts <- predict(
   )
   
 print(uptake_alts, digits = 3)
-write.csv(uptake_alternat, file = "./Tables/uptake_alts.csv")
-
-# Add graphic  
+write.csv(uptake_alts, file = "./Tables/uptake_alts.csv")
