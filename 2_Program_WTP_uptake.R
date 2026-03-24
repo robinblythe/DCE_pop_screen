@@ -63,10 +63,13 @@ ggsave("./Figures/WTP.png", height = 8, width = 12)
 # We now have a few options for how to predict uptake
 # The most ethical thing would be simply to limit the copayment to the additional charges individuals might incur.
 # For policy options 2 & 4, this is the cost of an additional consult ($37.50 for a citizen):
+
+# Want to know uptake by copayment:
+# Get the choice sets below, but repeat for every combination of costs from 0:1000
 choice_sets <- data.frame(
   Policy = 1:3,
   obsID = 1:3,
-  cost_con = c(0, 37.5, 37.5),
+  cost_con = 0,
   when_1 = 0,
   when_2 = 0,
   when_3 = 1,
@@ -89,16 +92,25 @@ choice_sets <- data.frame(
   asc = c(0, 0, 0)
 )
 
-optout_set <- choice_sets
-optout_set[,3:22] <- 0
-optout_set$asc <- 1
+# Vector of costs
+cost_values <- seq(0, 500, 10)
 
-# Each option is a trade-off between optin and optout
-single_choice <- bind_rows(choice_sets, optout_set) |> 
-  arrange(obsID)
+# Number of alternatives per original choice set
+n_alts <- nrow(choice_sets)
+
+# Repeat the original dataset for each cost
+expanded_choice_sets <- choice_sets[rep(1:n_alts, times = length(cost_values)), ]
+expanded_choice_sets$cost_con <- rep(cost_values, each = n_alts)
+expanded_choice_sets$obsID <- 1:nrow(expanded_choice_sets)
+
+single_choice <- rbind(expanded_choice_sets, expanded_choice_sets)
+single_choice[(nrow(expanded_choice_sets)+1):nrow(single_choice), 3:22] <- 0
+single_choice[(nrow(expanded_choice_sets)+1):nrow(single_choice), 23] <- 1
+
+single_choice <- single_choice |> arrange(obsID, Policy)
 
 # Predict uptake for individual program against optout, assuming copayments apply
-predict_uptake <- predict(
+predicted_uptake <- predict(
   mmnl_costcon,
   newdata = single_choice,
   obsID = "obsID",
@@ -122,56 +134,48 @@ predict_uptake <- predict(
     .keep = "none"
   )
 
-# Repeat the analysis with no copayments
-single_choice_free <- single_choice |> mutate(cost_con = 0) |> filter(Policy != 1)
 
-predict_uptake_free <- predict(
-  mmnl_costcon,
-  newdata = single_choice_free,
-  obsID = "obsID",
-  type = "prob",
-  returnData = TRUE,
-  interval = "confidence"
-) |>
-  filter(asc == 0) |>
-  mutate(
-    Policy = Policy,
-    predicted_uptake = predicted_prob,
-    predicted_uptake_lower = predicted_prob_lower,
-    predicted_uptake_upper = predicted_prob_upper,
-    WTP = cost_con,
-    when = when_1 + when_2 * 2 + when_3 * 3,
-    how = how_1 + how_2 * 2 + how_3 * 3,
-    type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
-    edu = edu_1 + edu_2 * 2 + edu_3 * 3,
-    clin = clin_1 + clin_2 * 2 + clin_3 * 3,
-    wait = wait_1 + wait_2 * 2 + wait_3 * 3,
-    .keep = "none"
-  )
-
-uptake <- bind_rows(predict_uptake, predict_uptake_free) |>
-  select(Policy, predicted_uptake, predicted_uptake_lower, predicted_uptake_upper, WTP) |>
-  rename(
-    "Predicted uptake" = predicted_uptake,
-    "Predicted uptake (lower)" = predicted_uptake_lower,
-    "Predicted uptake (upper)" = predicted_uptake_upper,
-    "WTP (SGD)" = WTP) |>
-  arrange(Policy)
-  
-
-print(uptake, digits = 3, row.names = FALSE)
-write.csv(uptake, file = "./Tables/uptake_vs_optout.csv")
+print(predicted_uptake, digits = 3, row.names = FALSE)
+write.csv(predicted_uptake, file = "./Tables/uptake_vs_optout.csv")
 
 # Now from the full menu of alternatives
-df_alternatives <- bind_rows(choice_sets, optout_set[1,]) |> 
-  mutate(obsID = 1,
-         Policy = 1:4)
+df_alternatives <- expanded_choice_sets |>
+  mutate(obsID = rep(1:(nrow(expanded_choice_sets)/3), each = 3, length.out = nrow(expanded_choice_sets)))
+
+optout <- data.frame(
+  Policy = 4,
+  obsID = 1:length(unique(df_alternatives$obsID)),
+  cost_con = 0,
+  when_1 = 0,
+  when_2 = 0,
+  when_3 = 0,
+  how_1 = 0,
+  how_2 = 0,
+  how_3 = 0,
+  type_1 = 0,
+  type_2 = 0,
+  type_3 = 0,
+  type_4 = 0,
+  edu_1 = 0,
+  edu_2 = 0,
+  edu_3 = 0,
+  clin_1 = 0,
+  clin_2 = 0,
+  clin_3 = 0,
+  wait_1 = 0,
+  wait_2 = 0,
+  wait_3 = 0,
+  asc = 1
+)
+
+df_alts <- bind_rows(df_alternatives, optout) |>
+  arrange(obsID, Policy)
 
 cost_test <- 430
 
-uptake_alternat <- predict(
+uptake_alts <- predict(
   mmnl_costcon, 
-  newdata = df_alternatives, 
+  newdata = df_alts, 
   obsID = "obsID", 
   type = "prob", 
   interval = "confidence", 
@@ -183,20 +187,14 @@ uptake_alternat <- predict(
     predicted_uptake_lower = predicted_prob_lower,
     predicted_uptake_upper = predicted_prob_upper,
     WTP = cost_con,
-    when = when_1 + when_2 * 2 + when_3 * 3,
-    how = how_1 + how_2 * 2 + how_3 * 3,
-    type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
-    edu = edu_1 + edu_2 * 2 + edu_3 * 3,
-    clin = clin_1 + clin_2 * 2 + clin_3 * 3,
-    wait = wait_1 + wait_2 * 2 + wait_3 * 3,
     Estimated_eligible_population = NA_real_,
     Budget_impact = cost_test * Estimated_eligible_population * predicted_uptake,
     Budget_impact_low = cost_test * Estimated_eligible_population * predicted_uptake_lower,
     Budget_impact_high = cost_test * Estimated_eligible_population * predicted_uptake_upper,
     .keep = "none"
-  ) |>
-  select(Policy:WTP, Estimated_eligible_population:Budget_impact_high)
+  )
   
-print(uptake_alternat, digits = 3)
-write.csv(uptake_alternat, file = "./Tables/uptake_alternatives.csv")
-  
+print(uptake_alts, digits = 3)
+write.csv(uptake_alternat, file = "./Tables/uptake_alts.csv")
+
+# Add graphic  

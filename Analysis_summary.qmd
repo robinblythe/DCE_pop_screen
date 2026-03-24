@@ -138,20 +138,25 @@ Based on our results, we can propose a variety of competing programs.
 -   Option 4: A practical choice based on maximising utility for low incremental costs. This policy is nearly identical to policy 2 except that it aims for a 4 week turnaround and uses stepwise testing. The WTP is \$454, with no incremental service costs assuming a 4 week turnaround is sustainable.
 
 ```{r, echo = FALSE}
-read.csv("./Tables/uptake_vs_optout.csv") |>
+p_uptake <- read.csv("./Tables/uptake_vs_optout.csv") |>
   select(-X) |>
-  flextable() |>
-  set_header_labels(
-    Predicted.uptake = "Predicted uptake",
-    Predicted.uptake..lower = "Predicted uptake (lower)",
-    Predicted.uptake..upper = "Predicted uptake (upper)",
-    WTP..SGD. = "WTP (SGD)"
-    ) |>
-  colformat_double(digits = 2) |>
-  fit_to_width(max_width = 6.5) |>
-  fontsize(size = 10) |>
-  theme_booktabs() |>
-  add_footer_lines("Note: Uptake is predicted relative to opting out. All costs in 2025 Singapore dollars (SGD)")
+  mutate(Policy = factor(Policy)) |>
+  ggplot()
+
+p_uptake +
+  geom_ribbon(aes(x = WTP, ymin = predicted_uptake_lower, ymax = predicted_uptake_upper, fill = Policy), alpha = 0.7) +
+  geom_line(aes(x = WTP, y = predicted_uptake), linewidth = 1.3) +
+  facet_wrap(~Policy, labeller = labeller(Policy = function(x) paste0("Policy ", x))) + 
+  scale_y_continuous(limits = c(0.7, 0.9), breaks = seq(0.7, 0.9, 0.05)) +
+  scale_x_continuous(limits = c(0, 500), breaks = seq(0, 500, 125)) +
+  scale_fill_manual(values = c("1" = "#E69F00", "2" = "#56B4E9", "3" = "#0072B2")) +
+  theme_minimal() +
+  guides(fill = "none") +
+  theme(panel.grid.minor = element_blank()) +
+  labs(x = "Willingness-to-pay for screening (SGD)",
+       y = "Predicted uptake")
+
+
 ```
 
 ### Program uptake at different WTP levels and overall budget impact

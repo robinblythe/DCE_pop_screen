@@ -1,6 +1,26 @@
 library(tidyverse)
 library(logitr)
 
+p_uptake <- read.csv("./Tables/uptake_vs_optout.csv") |>
+  select(-X) |>
+  mutate(Policy = factor(Policy)) |>
+  ggplot()
+
+p_uptake +
+  geom_ribbon(aes(x = WTP, ymin = predicted_uptake_lower, ymax = predicted_uptake_upper, fill = Policy), alpha = 0.7) +
+  geom_line(aes(x = WTP, y = predicted_uptake), linewidth = 1.3) +
+  facet_wrap(~Policy, labeller = labeller(Policy = function(x) paste0("Policy ", x))) + 
+  scale_y_continuous(limits = c(0.7, 0.9), breaks = seq(0.7, 0.9, 0.05)) +
+  scale_x_continuous(limits = c(0, 500), breaks = seq(0, 500, 125)) +
+  scale_fill_manual(values = c("1" = "#E69F00", "2" = "#56B4E9", "3" = "#0072B2")) +
+  theme_minimal() +
+  guides(fill = "none") +
+  theme(panel.grid.minor = element_blank()) +
+  labs(x = "Willingness-to-pay for screening (SGD)",
+       y = "Predicted uptake")
+ggsave("./Figures/predicted_uptake_optout.png", height = 6, width = 8)
+
+
 mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 
 choice_sets <- expand.grid(
@@ -91,4 +111,3 @@ p_uptake +
 
 ggsave("./Figures/uptake_by_attribute.png", height = 10, width = 8)
 
-# maybe try a scatter with cost on one axis and combo of alternatives on other
