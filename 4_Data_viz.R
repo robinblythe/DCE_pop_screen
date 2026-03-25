@@ -1,5 +1,9 @@
 library(tidyverse)
 library(logitr)
+library(patchwork)
+library(flextable)
+
+source("./99_utils.R")
 
 mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 
@@ -28,21 +32,27 @@ p_wtp +
   geom_point(size = 3) +
   geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  scale_y_continuous(limits = c(-200, 700), breaks = seq(-200, 700, 100)) +
+  scale_y_continuous(limits = c(-100, 600), breaks = seq(-100, 600, 100)) +
   coord_flip() +
-  labs(x = NULL, y = "WTP (SGD)") +
+  labs(x = "Attribute level", y = "Incremental willingness-to-pay (SGD)") +
   theme_minimal() +
   theme(panel.grid.minor = element_blank())
 
-print(p_wtp$data)
-
 # Save wtp results as table
-write.csv(p_wtp$data[,c("attribute", "wtp_sgd", "ci_lower", "ci_upper")], "./Tables/wtp_results.csv", row.names = FALSE)
+write.csv(p_wtp$data, "./Tables/wtp_results.csv")
 # As figure
 ggsave("./Figures/WTP.png", height = 8, width = 12)
 
+# Overall results table
+tabulate_service_costs(p_wtp$data) |>
+  flextable() |>
+  colformat_double(digits = 2) |>
+  fit_to_width(max_width = 6.5) |>
+  fontsize(size = 10) |>
+  theme_booktabs() |>
+  add_footer_lines("Note: Reference categories set to 0. All values in 2025 Singapore dollars (SGD)")
 
-#########
+
 # Uptake
 p_uptake <- read.csv("./Tables/uptake_vs_optout.csv") |>
   select(-X) |>
@@ -53,7 +63,7 @@ p_uptake +
   geom_ribbon(aes(x = WTP, ymin = predicted_uptake_lower, ymax = predicted_uptake_upper, fill = Policy), alpha = 0.7) +
   geom_line(aes(x = WTP, y = predicted_uptake), linewidth = 1.3) +
   facet_wrap(~Policy, labeller = labeller(Policy = function(x) paste0("Policy ", x))) + 
-  scale_y_continuous(limits = c(0.7, 0.9), breaks = seq(0.7, 0.9, 0.05)) +
+  scale_y_continuous(limits = c(0.7, 1), breaks = seq(0.7, 1, 0.05)) +
   scale_x_continuous(limits = c(0, 500), breaks = seq(0, 500, 125)) +
   scale_fill_manual(values = c("1" = "#E69F00", "2" = "#56B4E9", "3" = "#0072B2")) +
   theme_minimal() +
@@ -75,6 +85,7 @@ p_alts <- dat |>
   
 p_alts +
   geom_area(aes(x = WTP, y = predicted_uptake, fill = Policy), position = "stack") +
+  scale_y_continuous(limits = c(-0.01, 1.01), breaks = seq(0, 1, 0.1)) +
   scale_fill_manual(values = c(
     "Basic screening" = "#E69F00", 
     "Pilot continuation" = "#56B4E9", 
@@ -89,16 +100,39 @@ p_alts +
 ggsave("./Figures/predicted_uptake_alternatives.png", height = 5, width = 7)
 
 
+# Combined uptake plot
+(p_uptake +
+    geom_ribbon(aes(x = WTP, ymin = predicted_uptake_lower, ymax = predicted_uptake_upper, fill = Policy), alpha = 0.7) +
+    geom_line(aes(x = WTP, y = predicted_uptake), linewidth = 1.3) +
+    facet_wrap(~Policy, labeller = labeller(Policy = function(x) paste0("Policy ", x))) + 
+    scale_y_continuous(limits = c(0.7, 1), breaks = seq(0.7, 1, 0.05)) +
+    scale_x_continuous(limits = c(0, 500), breaks = seq(0, 500, 125)) +
+    scale_fill_manual(values = c("1" = "#E69F00", "2" = "#56B4E9", "3" = "#0072B2")) +
+    theme_minimal() +
+    guides(fill = "none") +
+    theme(panel.grid.minor = element_blank()) +
+    labs(x = "Willingness-to-pay for screening (SGD)",
+         y = "Predicted uptake (compared to opt-out)")) /
+  (p_alts +
+     geom_area(aes(x = WTP, y = predicted_uptake, fill = Policy), position = "stack") +
+     scale_fill_manual(values = c(
+       "Basic screening" = "#E69F00", 
+       "Pilot continuation" = "#56B4E9", 
+       "Utility-maximising" = "#0072B2",
+       "Opt-out" = "#999999"
+     )) +
+     theme_minimal() +
+     theme(panel.grid.minor = element_blank()) +
+     labs(x = "Willingness-to-pay for screening (SGD)",
+          y = "Predicted uptake (compared to other programs)")) +
+  plot_annotation(tag_levels = "A") +
+  plot_layout(guides = "collect")
 
+ggsave("./Figures/predicted_uptake_combined.png", height = 9, width = 9)
 
-
-
-
-
-
-
+# Marginal uptake by attribute level
 choice_sets <- expand.grid(
-  cost_con = c(0, 50, 150, 300, 1500),
+  cost_con = c(0, 100, 300, 600, 1200),
   when = c(1, 2, 3),
   how = c(1, 2, 3),
   type = c(1, 2, 3, 4),
@@ -142,22 +176,22 @@ predict_uptake <- predict(
     )
 
 p_uptake <- bind_rows(
-  predict_uptake |> filter(how == 1, type == 1, edu == 1, clin == 1, wait == 1) |>
+  predict_uptake |> filter(how == 1, type == 1, edu == 3, clin == 3, wait == 3) |>
     select(cost, level = when, predicted_uptake) |> mutate(attribute = "When to Screen"),
   
-  predict_uptake |> filter(when == 1, type == 1, edu == 1, clin == 1, wait == 1) |>
+  predict_uptake |> filter(when == 3, type == 1, edu == 3, clin == 3, wait == 3) |>
     select(cost, level = how, predicted_uptake) |> mutate(attribute = "How to Screen"),
   
-  predict_uptake |> filter(when == 1, how == 1, edu == 1, clin == 1, wait == 1) |>
+  predict_uptake |> filter(when == 3, how == 1, edu == 3, clin == 3, wait == 3) |>
     select(cost, level = type, predicted_uptake) |> mutate(attribute = "Condition Type"),
   
-  predict_uptake |> filter(when == 1, how == 1, type == 1, clin == 1, wait == 1) |>
+  predict_uptake |> filter(when == 3, how == 1, type == 1, clin == 3, wait == 3) |>
     select(cost, level = edu, predicted_uptake) |> mutate(attribute = "Education Method"),
   
-  predict_uptake |> filter(when == 1, how == 1, type == 1, edu == 1, wait == 1) |>
+  predict_uptake |> filter(when == 3, how == 1, type == 1, edu == 3, wait == 3) |>
     select(cost, level = clin, predicted_uptake) |> mutate(attribute = "Clinician Type"),
   
-  predict_uptake |> filter(when == 1, how == 1, type == 1, edu == 1, clin == 1) |>
+  predict_uptake |> filter(when == 3, how == 1, type == 1, edu == 3, clin == 3) |>
     select(cost, level = wait, predicted_uptake) |> mutate(attribute = "Wait Time")
 ) |>
   ggplot(aes(x = factor(level), y = predicted_uptake, color = attribute, group = attribute))
@@ -171,7 +205,7 @@ p_uptake +
              scales = "free") +
   scale_y_continuous(
     labels = scales::percent,
-    breaks = scales::breaks_pretty(n = 3)
+    breaks = scales::breaks_extended(n = 4),
   ) +
   scale_colour_viridis_d() +
   labs(title = "Predicted uptake by attribute across copayment levels",
@@ -184,4 +218,5 @@ p_uptake +
         panel.grid.minor = element_blank())
 
 ggsave("./Figures/uptake_by_attribute.png", height = 10, width = 8)
+
 

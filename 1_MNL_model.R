@@ -49,8 +49,7 @@ mmnl_costcon <- logitr(
 
 summary(mmnl_costcon)
 
-# Notes: the large SDs in the random coefficients suggest heterogeneity
-# The large effect size on the random effect SD for the ASC suggests strong heterogeneity in the opt-out
-
+# Notes: the large SDs in the random coefficients suggest substantial heterogeneity
+# Large negative coefficient on the ASC suggests people prefer not to opt out if possible
 saveRDS(mmnl_costcon, "./Models/mmnl_continuous.rds")
-
+write.csv(summary(mmnl_costcon)$coefTable, "./Tables/mmnl_results.csv")

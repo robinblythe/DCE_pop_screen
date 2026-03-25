@@ -1,105 +1,124 @@
-dat <- p_wtp$data
+# Check WTP for overall policies:
+wtp_est <- wtp(mmnl_costcon, "cost_con")
+# Base case: policy 1 has no incremental WTP because it is the reference category
 
-# Define cost parameters
-cost_single_test <- 430
-cost_single_visit <- 154.03
-USD_to_SGD <- 1.28 # As of 18 March 2026
-cost_obgyn <- 240
-cost_GP <- cost_single_visit
-cost_counsellor <- cost_single_visit
+# Policy number 2: Closest to existing pilot
+# when = Ref & how = Ref & type = 2 & edu = 2 & clin = Ref & wait = 2
+round(wtp_est["type_2", "Estimate"] + wtp_est["edu_2", "Estimate"] + wtp_est["wait_2", "Estimate"])
 
+# Policy number 3:
+# when = 3 & how = 2 & type = 2 & edu = 3 & clin = 3 & wait = 1
+round(wtp_est["how_2", "Estimate"] + wtp_est["type_2", "Estimate"] + wtp_est["edu_2", "Estimate"] + wtp_est["wait_1", "Estimate"])
+
+# Policy number 4:
+# when = 1 & how = 2 & type = 4 & edu = 1 & clin = 2 & wait = 1
+round(wtp_est["when_1", "Estimate"] + wtp_est["how_2", "Estimate"] + wtp_est["type_4", "Estimate"] +
+        wtp_est["edu_1", "Estimate"] + wtp_est["clin_2", "Estimate"] + wtp_est["wait_1", "Estimate"])
+
+
+# Helper function for WTP table
 # Create the complete table
-service_costs <- tibble::tibble(
-  Attribute = c(
-    "When screening should be subsidised",
-    "",
-    "",
-    "",
-    "How results are received",
-    "",
-    "",
-    "",
-    "Type of conditions screened",
-    "",
-    "",
-    "",
-    "",
-    "Education and counselling",
-    "",
-    "",
-    "",
-    "Clinician providing the screening service",
-    "",
-    "",
-    "",
-    "Wait times",
-    "",
-    ""
-  ),
+tabulate_service_costs <- function(dat) {
   
-  Levels = c(
-    "For married couples before conception only",
-    "For married couples only",
-    "Any time, including before couples are married",
-    NA,
-    "Our risk as a couple",
-    "One of us tested first, and if we are a carrier, the other is tested for those genes",
-    "Our risk both as individuals and as a couple",
-    NA,
-    "Extremely severe (conditions with shortened lifespan in infancy/childhood or intellectual disability)",
-    "Extremely severe and severe (conditions with shortened lifespan in early adulthood, impaired mobility, or disabling organ impairment)",
-    "Extremely severe, severe, and moderate (conditions causing visual or hearing impairments and immune deficiency)",
-    "All conditions regardless of severity, including conditions with onset later in life such as genetic risks of heart disease or cancer",
-    NA,
-    "Only written or online informational materials are available",
-    "In-person appointment alone or with my partner are available only if we are both carriers of a disease, with online/written informational materials available before our test",
-    "In-person appointments alone or with my partner are available both before and after testing",
-    NA,
-    "Genetic counselling service",
-    "General practitioner/polyclinic",
-    "Obstetrician/gynaecologist",
-    NA,
-    "Up to 16 weeks",
-    "Up to 8 weeks",
-    "Up to 4 weeks"
-  ),
+  cost_single_test = 430
+  cost_single_visit = 154.03
+  USD_to_SGD = 1.28 # As of 18 March 2026
+  cost_obgyn = 240
+  cost_GP = cost_single_visit
+  cost_counsellor = cost_single_visit
   
-  `Willingness-to-pay (SGD)` = c(
-    "Reference", round(dat["Married couples only", "wtp_sgd"], 2), round(dat["Screening available at any time", "wtp_sgd"], 2),  NA,
-    "Reference", round(dat["Stepwise screening", "wtp_sgd"], 2), round(dat["Individual screening", "wtp_sgd"], 2), NA,
-    "Reference", round(dat["Extremely severe & severe conditions", "wtp_sgd"], 2), round(dat["Extremely severe, severe & moderate conditions", "wtp_sgd"], 2), round(dat["All conditions regardless of severity", "wtp_sgd"], 2), NA,
-    "Reference", round(dat["In-person appointment only for positive tests", "wtp_sgd"], 2), round(dat["In-person appointment pre and post-test", "wtp_sgd"], 2), NA,
-    "Reference", round(dat["GP/polyclinic", "wtp_sgd"], 2), round(dat["OB/GYN", "wtp_sgd"], 2), NA,
-    "Reference", round(dat["Up to 8 weeks wait", "wtp_sgd"], 2), round(dat["Up to 4 weeks wait", "wtp_sgd"], 2)
-  ),
-  
-  Lower = c(
-    NA, dat["Married couples only", "ci_lower"], dat["Screening available at any time", "ci_lower"], NA,
-    NA, dat["Stepwise screening", "ci_lower"], dat["Individual screening", "ci_lower"], NA,
-    NA, dat["Extremely severe & severe conditions", "ci_lower"], dat["Extremely severe, severe & moderate conditions", "ci_lower"], dat["All conditions regardless of severity", "ci_lower"], NA,
-    NA, dat["In-person appointment only for positive tests", "ci_lower"], dat["In-person appointment pre and post-test", "ci_lower"], NA,
-    NA, dat["GP/polyclinic", "ci_lower"], dat["OB/GYN", "ci_lower"], NA,
-    NA, dat["Up to 8 weeks wait", "ci_lower"], dat["Up to 4 weeks wait", "ci_lower"]
-  ),
-  
-  Upper = c(
-    NA, dat["Married couples only", "ci_upper"], dat["Screening available at any time", "ci_upper"], NA,
-    NA, dat["Stepwise screening", "ci_upper"], dat["Individual screening", "ci_upper"], NA,
-    NA, dat["Extremely severe & severe conditions", "ci_upper"], dat["Extremely severe, severe & moderate conditions", "ci_upper"], dat["All conditions regardless of severity", "ci_upper"], NA,
-    NA, dat["In-person appointment only for positive tests", "ci_upper"], dat["In-person appointment pre and post-test", "ci_upper"], NA,
-    NA, dat["GP/polyclinic", "ci_upper"], dat["OB/GYN", "ci_upper"], NA,
-    NA, dat["Up to 8 weeks wait", "ci_upper"], dat["Up to 4 weeks wait", "ci_upper"]
-  ),
-  
-  `Incremental service cost (SGD)` = c(
-    0, 0, 0, NA,
-    0, -(1 - 0.6) * cost_single_test, 0, NA,
-    -0.5 * cost_single_test, 0, (325 * USD_to_SGD - cost_single_test), (1989 * USD_to_SGD - cost_single_test), NA,
-    -cost_single_visit, 0, cost_single_visit, NA,
-    cost_counsellor, cost_GP, cost_obgyn, NA,
-    0, 0, 0
+  service_costs = tibble::tibble(
+    Attribute = c(
+      "When screening should be subsidised",
+      "",
+      "",
+      "",
+      "How results are received",
+      "",
+      "",
+      "",
+      "Type of conditions screened",
+      "",
+      "",
+      "",
+      "",
+      "Education and counselling",
+      "",
+      "",
+      "",
+      "Clinician providing the screening service",
+      "",
+      "",
+      "",
+      "Wait times",
+      "",
+      ""
+    ),
+    
+    Levels = c(
+      "For married couples before conception only",
+      "For married couples only",
+      "Any time, including before couples are married",
+      NA,
+      "Our risk as a couple",
+      "One of us tested first, and if we are a carrier, the other is tested for those genes",
+      "Our risk both as individuals and as a couple",
+      NA,
+      "Extremely severe (conditions with shortened lifespan in infancy/childhood or intellectual disability)",
+      "Extremely severe and severe (conditions with shortened lifespan in early adulthood, impaired mobility, or disabling organ impairment)",
+      "Extremely severe, severe, and moderate (conditions causing visual or hearing impairments and immune deficiency)",
+      "All conditions regardless of severity, including conditions with onset later in life such as genetic risks of heart disease or cancer",
+      NA,
+      "Only written or online informational materials are available",
+      "In-person appointment alone or with my partner are available only if we are both carriers of a disease, with online/written informational materials available before our test",
+      "In-person appointments alone or with my partner are available both before and after testing",
+      NA,
+      "Genetic counselling service",
+      "General practitioner/polyclinic",
+      "Obstetrician/gynaecologist",
+      NA,
+      "Up to 16 weeks",
+      "Up to 8 weeks",
+      "Up to 4 weeks"
+    ),
+    
+    `Willingness-to-pay (SGD)` = c(
+      "Reference", round(dat["Married couples only", "wtp_sgd"], 2), round(dat["Screening available at any time", "wtp_sgd"], 2),  NA,
+      "Reference", round(dat["Stepwise screening", "wtp_sgd"], 2), round(dat["Individual screening", "wtp_sgd"], 2), NA,
+      "Reference", round(dat["Extremely severe & severe conditions", "wtp_sgd"], 2), round(dat["Extremely severe, severe & moderate conditions", "wtp_sgd"], 2), round(dat["All conditions regardless of severity", "wtp_sgd"], 2), NA,
+      "Reference", round(dat["In-person appointment only for positive tests", "wtp_sgd"], 2), round(dat["In-person appointment pre and post-test", "wtp_sgd"], 2), NA,
+      "Reference", round(dat["GP/polyclinic", "wtp_sgd"], 2), round(dat["OB/GYN", "wtp_sgd"], 2), NA,
+      "Reference", round(dat["Up to 8 weeks wait", "wtp_sgd"], 2), round(dat["Up to 4 weeks wait", "wtp_sgd"], 2)
+    ),
+    
+    Lower = c(
+      NA, dat["Married couples only", "ci_lower"], dat["Screening available at any time", "ci_lower"], NA,
+      NA, dat["Stepwise screening", "ci_lower"], dat["Individual screening", "ci_lower"], NA,
+      NA, dat["Extremely severe & severe conditions", "ci_lower"], dat["Extremely severe, severe & moderate conditions", "ci_lower"], dat["All conditions regardless of severity", "ci_lower"], NA,
+      NA, dat["In-person appointment only for positive tests", "ci_lower"], dat["In-person appointment pre and post-test", "ci_lower"], NA,
+      NA, dat["GP/polyclinic", "ci_lower"], dat["OB/GYN", "ci_lower"], NA,
+      NA, dat["Up to 8 weeks wait", "ci_lower"], dat["Up to 4 weeks wait", "ci_lower"]
+    ),
+    
+    Upper = c(
+      NA, dat["Married couples only", "ci_upper"], dat["Screening available at any time", "ci_upper"], NA,
+      NA, dat["Stepwise screening", "ci_upper"], dat["Individual screening", "ci_upper"], NA,
+      NA, dat["Extremely severe & severe conditions", "ci_upper"], dat["Extremely severe, severe & moderate conditions", "ci_upper"], dat["All conditions regardless of severity", "ci_upper"], NA,
+      NA, dat["In-person appointment only for positive tests", "ci_upper"], dat["In-person appointment pre and post-test", "ci_upper"], NA,
+      NA, dat["GP/polyclinic", "ci_upper"], dat["OB/GYN", "ci_upper"], NA,
+      NA, dat["Up to 8 weeks wait", "ci_upper"], dat["Up to 4 weeks wait", "ci_upper"]
+    ),
+    
+    `Incremental service cost (SGD)` = c(
+      0, 0, 0, NA,
+      0, -(1 - 0.6) * cost_single_test, 0, NA,
+      -0.5 * cost_single_test, 0, (325 * USD_to_SGD - cost_single_test), (1989 * USD_to_SGD - cost_single_test), NA,
+      -cost_single_visit, 0, cost_single_visit, NA,
+      cost_counsellor, cost_GP, cost_obgyn, NA,
+      0, 0, 0
+    )
   )
-)
-service_costs$`Incremental program cost (SGD)` <- service_costs$`Incremental service cost (SGD)` - as.numeric(service_costs$`Willingness-to-pay (SGD)`)
-
+  service_costs$`Incremental program cost (SGD)` = service_costs$`Incremental service cost (SGD)` - as.numeric(service_costs$`Willingness-to-pay (SGD)`)
+  return(service_costs)
+}
 
