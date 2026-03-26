@@ -1,33 +1,14 @@
-# Check WTP for overall policies:
-wtp_est <- wtp(mmnl_costcon, "cost_con")
-# Base case: policy 1 has no incremental WTP because it is the reference category
-
-# Policy number 2: Closest to existing pilot
-# when = Ref & how = Ref & type = 2 & edu = 2 & clin = Ref & wait = 2
-round(wtp_est["type_2", "Estimate"] + wtp_est["edu_2", "Estimate"] + wtp_est["wait_2", "Estimate"])
-
-# Policy number 3:
-# when = 3 & how = 2 & type = 2 & edu = 3 & clin = 3 & wait = 1
-round(wtp_est["how_2", "Estimate"] + wtp_est["type_2", "Estimate"] + wtp_est["edu_2", "Estimate"] + wtp_est["wait_1", "Estimate"])
-
-# Policy number 4:
-# when = 1 & how = 2 & type = 4 & edu = 1 & clin = 2 & wait = 1
-round(wtp_est["when_1", "Estimate"] + wtp_est["how_2", "Estimate"] + wtp_est["type_4", "Estimate"] +
-        wtp_est["edu_1", "Estimate"] + wtp_est["clin_2", "Estimate"] + wtp_est["wait_1", "Estimate"])
-
-
 # Helper function for WTP table
 # Create the complete table
 tabulate_service_costs <- function(dat) {
-  
-  cost_single_test = 430
-  cost_single_visit = 154.03
-  USD_to_SGD = 1.28 # As of 18 March 2026
-  cost_obgyn = 240
-  cost_GP = cost_single_visit
-  cost_counsellor = cost_single_visit
-  
-  service_costs = tibble::tibble(
+  cost_single_test <- 430
+  cost_single_visit <- 154.03
+  USD_to_SGD <- 1.28 # As of 18 March 2026
+  cost_obgyn <- 240
+  cost_GP <- cost_single_visit
+  cost_counsellor <- cost_single_visit
+
+  service_costs <- tibble::tibble(
     Attribute = c(
       "When screening should be subsidised",
       "",
@@ -54,7 +35,6 @@ tabulate_service_costs <- function(dat) {
       "",
       ""
     ),
-    
     Levels = c(
       "For married couples before conception only",
       "For married couples only",
@@ -81,16 +61,14 @@ tabulate_service_costs <- function(dat) {
       "Up to 8 weeks",
       "Up to 4 weeks"
     ),
-    
     `Willingness-to-pay (SGD)` = c(
-      "Reference", round(dat["Married couples only", "wtp_sgd"], 2), round(dat["Screening available at any time", "wtp_sgd"], 2),  NA,
+      "Reference", round(dat["Married couples only", "wtp_sgd"], 2), round(dat["Screening available at any time", "wtp_sgd"], 2), NA,
       "Reference", round(dat["Stepwise screening", "wtp_sgd"], 2), round(dat["Individual screening", "wtp_sgd"], 2), NA,
       "Reference", round(dat["Extremely severe & severe conditions", "wtp_sgd"], 2), round(dat["Extremely severe, severe & moderate conditions", "wtp_sgd"], 2), round(dat["All conditions regardless of severity", "wtp_sgd"], 2), NA,
       "Reference", round(dat["In-person appointment only for positive tests", "wtp_sgd"], 2), round(dat["In-person appointment pre and post-test", "wtp_sgd"], 2), NA,
       "Reference", round(dat["GP/polyclinic", "wtp_sgd"], 2), round(dat["OB/GYN", "wtp_sgd"], 2), NA,
       "Reference", round(dat["Up to 8 weeks wait", "wtp_sgd"], 2), round(dat["Up to 4 weeks wait", "wtp_sgd"], 2)
     ),
-    
     Lower = c(
       NA, dat["Married couples only", "ci_lower"], dat["Screening available at any time", "ci_lower"], NA,
       NA, dat["Stepwise screening", "ci_lower"], dat["Individual screening", "ci_lower"], NA,
@@ -99,7 +77,6 @@ tabulate_service_costs <- function(dat) {
       NA, dat["GP/polyclinic", "ci_lower"], dat["OB/GYN", "ci_lower"], NA,
       NA, dat["Up to 8 weeks wait", "ci_lower"], dat["Up to 4 weeks wait", "ci_lower"]
     ),
-    
     Upper = c(
       NA, dat["Married couples only", "ci_upper"], dat["Screening available at any time", "ci_upper"], NA,
       NA, dat["Stepwise screening", "ci_upper"], dat["Individual screening", "ci_upper"], NA,
@@ -108,7 +85,6 @@ tabulate_service_costs <- function(dat) {
       NA, dat["GP/polyclinic", "ci_upper"], dat["OB/GYN", "ci_upper"], NA,
       NA, dat["Up to 8 weeks wait", "ci_upper"], dat["Up to 4 weeks wait", "ci_upper"]
     ),
-    
     `Incremental service cost (SGD)` = c(
       0, 0, 0, NA,
       0, -(1 - 0.6) * cost_single_test, 0, NA,
@@ -118,7 +94,60 @@ tabulate_service_costs <- function(dat) {
       0, 0, 0
     )
   )
-  service_costs$`Incremental program cost (SGD)` = service_costs$`Incremental service cost (SGD)` - as.numeric(service_costs$`Willingness-to-pay (SGD)`)
+  service_costs$`Incremental program cost (SGD)` <- service_costs$`Incremental service cost (SGD)` - as.numeric(service_costs$`Willingness-to-pay (SGD)`)
   return(service_costs)
 }
 
+
+# Helper function for marginal uptake plot
+make_choice_table <- function(choice_sets) {
+  choice_sets$obsID <- 1:nrow(choice_sets)
+
+  choices <- fastDummies::dummy_cols(choice_sets, c("when", "how", "type", "edu", "clin", "wait")) |>
+    select(obsID, cost_con, when_1:wait_3)
+  choices$asc <- 0
+
+  optout <- choices |> select(obsID, cost_con, when_1:wait_3)
+  optout[, 2:21] <- 0
+  optout$asc <- 1
+
+  single_choice <- bind_rows(choices, optout) |>
+    arrange(obsID)
+
+  predict_uptake <- predict(
+    mmnl_costcon,
+    newdata = single_choice,
+    type = "prob",
+    obsID = "obsID",
+    returnData = TRUE,
+  ) |>
+    filter(asc == 0) |>
+    mutate(
+      obsID = obsID,
+      predicted_uptake = predicted_prob,
+      cost = cost_con,
+      when = when_1 + when_2 * 2 + when_3 * 3,
+      how = how_1 + how_2 * 2 + how_3 * 3,
+      type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
+      edu = edu_1 + edu_2 * 2 + edu_3 * 3,
+      clin = clin_1 + clin_2 * 2 + clin_3 * 3,
+      wait = wait_1 + wait_2 * 2 + wait_3 * 3,
+      .keep = "none"
+    )
+
+  p_uptake <- bind_rows(
+    predict_uptake |> filter(how == 1, type == 1, edu == 3, clin == 3, wait == 3) |>
+      select(cost, level = when, predicted_uptake) |> mutate(attribute = "When to Screen"),
+    predict_uptake |> filter(when == 3, type == 1, edu == 3, clin == 3, wait == 3) |>
+      select(cost, level = how, predicted_uptake) |> mutate(attribute = "How to Screen"),
+    predict_uptake |> filter(when == 3, how == 1, edu == 3, clin == 3, wait == 3) |>
+      select(cost, level = type, predicted_uptake) |> mutate(attribute = "Condition Type"),
+    predict_uptake |> filter(when == 3, how == 1, type == 1, clin == 3, wait == 3) |>
+      select(cost, level = edu, predicted_uptake) |> mutate(attribute = "Education Method"),
+    predict_uptake |> filter(when == 3, how == 1, type == 1, edu == 3, wait == 3) |>
+      select(cost, level = clin, predicted_uptake) |> mutate(attribute = "Clinician Type"),
+    predict_uptake |> filter(when == 3, how == 1, type == 1, edu == 3, clin == 3) |>
+      select(cost, level = wait, predicted_uptake) |> mutate(attribute = "Wait Time")
+  )
+  return(p_uptake)
+}

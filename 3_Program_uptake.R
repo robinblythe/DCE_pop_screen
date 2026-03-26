@@ -45,6 +45,7 @@ choice_sets <- data.frame(
 )
 
 # Vector of copayment amounts
+# Full cost of test is only around $430, so doesn't make much sense to test further
 cost_values <- seq(0, 500, 10)
 
 # Number of alternatives per original choice set
@@ -53,12 +54,12 @@ n_alts <- nrow(choice_sets)
 # Repeat the original dataset for each copay
 expanded_choice_sets <- choice_sets[rep(1:n_alts, times = length(cost_values)), ]
 expanded_choice_sets$cost_con <- rep(cost_values, each = n_alts)
-expanded_choice_sets$obsID <- 1:nrow(expanded_choice_sets)
+expanded_choice_sets$obsID <- 1:nrow(expanded_choice_sets) # set new obsID per decision
 
 # Create the optout choice
-single_choice <- rbind(expanded_choice_sets, expanded_choice_sets)
-single_choice[(nrow(expanded_choice_sets)+1):nrow(single_choice), 3:22] <- 0
-single_choice[(nrow(expanded_choice_sets)+1):nrow(single_choice), 23] <- 1
+single_choice <- rbind(expanded_choice_sets, expanded_choice_sets) # Replicate and bind the dataset
+single_choice[(nrow(expanded_choice_sets) + 1):nrow(single_choice), 3:22] <- 0 # Replace the bottom half with null choices
+single_choice[(nrow(expanded_choice_sets) + 1):nrow(single_choice), 23] <- 1 # Replace the asc with 1
 single_choice <- single_choice |> arrange(obsID, Policy)
 
 # Predict uptake for individual program against optout, assuming copayments apply
@@ -91,7 +92,7 @@ write.csv(predicted_uptake, file = "./Tables/uptake_vs_optout.csv")
 
 # Now from the full menu of alternatives
 df_alternatives <- expanded_choice_sets |>
-  mutate(obsID = rep(1:(nrow(expanded_choice_sets)/3), each = 3, length.out = nrow(expanded_choice_sets)))
+  mutate(obsID = rep(1:(nrow(expanded_choice_sets) / 3), each = 3, length.out = nrow(expanded_choice_sets)))
 
 optout <- data.frame(
   Policy = 4,
@@ -125,11 +126,11 @@ df_alts <- bind_rows(df_alternatives, optout) |>
 cost_test <- 430
 
 uptake_alts <- predict(
-  mmnl_costcon, 
-  newdata = df_alts, 
-  obsID = "obsID", 
-  type = "prob", 
-  interval = "confidence", 
+  mmnl_costcon,
+  newdata = df_alts,
+  obsID = "obsID",
+  type = "prob",
+  interval = "confidence",
   returnData = TRUE
 ) |>
   mutate(
@@ -144,6 +145,6 @@ uptake_alts <- predict(
     Budget_impact_high = cost_test * Estimated_eligible_population * predicted_uptake_upper,
     .keep = "none"
   )
-  
+
 print(uptake_alts, digits = 3)
 write.csv(uptake_alts, file = "./Tables/uptake_alts.csv")

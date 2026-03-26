@@ -1,14 +1,15 @@
-# We are interested in knowing whether program uptake is potentially a function of racial groupings (Malay or Indian)
-# Accordingly, it could be useful to determine how much preference heterogeneity is being absorbed by race
+# We are interested in knowing whether program uptake and cost sensitivity are potentially different among Malays and Indians
 
 library(logitr)
 library(dplyr)
 
 df_prepared <- readRDS("./Data/df_prepared.RDS") |>
-  mutate(cost_mal = raceMal * cost_con, # Create interactions
-         cost_ind = raceInd * cost_con,
-         asc_mal = raceMal * asc,
-         asc_ind = raceInd * asc)
+  mutate(
+    cost_mal = raceMal * cost_con, # Create interactions
+    cost_ind = raceInd * cost_con,
+    asc_mal = raceMal * asc,
+    asc_ind = raceInd * asc
+  )
 
 # Cost as a continuous variable
 mmnl_subgroup <- logitr(
@@ -36,7 +37,7 @@ mmnl_subgroup <- logitr(
     "asc",
     # Potential race-specific opt-out
     "asc_mal", "asc_ind"
-    # Note - race variables without interaction are excluded; model fails with them in, maybe due to perfect collinearity
+    # Note - race variables without interaction are excluded; only interested in cost and opt-out
   ),
   randPars = c(
     cost_con = "n",
@@ -47,7 +48,7 @@ mmnl_subgroup <- logitr(
     clin_1 = "n", clin_2 = "n",
     wait_1 = "n", wait_2 = "n",
     asc = "n" # ASC included as random effect
-  ), 
+  ),
   panelID = "record",
   numDraws = 800,
   drawType = "sobol",
@@ -61,17 +62,16 @@ mmnl_subgroup <- logitr(
 )
 
 summary(mmnl_subgroup)
-# Some evidence that Malays are slightly more cost-sensitive
-# Some evidence that Malays are more likely to opt out and Indians less
+# Some evidence that Malays are slightly more cost-sensitive, but large SE
+# Some evidence that Malays are more likely to opt out and Indians less, but limited utility at population level
 
 mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 summary(mmnl_costcon)
 
-# No material difference in AIC
-AIC(mmnl_costcon)
-AIC(mmnl_subgroup)
+# No material difference in log likelihood suggests limited explanatory power
+# Stick with more parsimonious model
+logLik(mmnl_costcon)
+logLik(mmnl_subgroup)
 
-# Notes: the large SDs in the random coefficients suggest substantial heterogeneity
-# Large negative coefficient on the ASC suggests people prefer not to opt out if possible
 saveRDS(mmnl_subgroup, "./Models/mmnl_subgroup.rds")
 write.csv(summary(mmnl_subgroup)$coefTable, "./Tables/mmnl_subgroup_results.csv")
