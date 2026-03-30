@@ -1,12 +1,14 @@
+# Some cost parameters
+cost_single_test <- 430
+cost_single_visit <- 154.03
+USD_to_SGD <- 1.28 # As of 18 March 2026
+cost_obgyn <- 240
+cost_GP <- cost_single_visit
+cost_counsellor <- cost_single_visit
+
 # Helper function for WTP table
 # Create the complete table
 tabulate_service_costs <- function(dat) {
-  cost_single_test <- 430
-  cost_single_visit <- 154.03
-  USD_to_SGD <- 1.28 # As of 18 March 2026
-  cost_obgyn <- 240
-  cost_GP <- cost_single_visit
-  cost_counsellor <- cost_single_visit
 
   service_costs <- tibble::tibble(
     Attribute = c(

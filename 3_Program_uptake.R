@@ -6,14 +6,14 @@ mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 
 ### Uptake predictions - select groups of interest:
 
-# Option 1: the base-case (cheapest to provide)
+# Option 1: the base case (all values at reference category)
 # cost_con == 0 & when_3 == 1 & how_1 == 1 & type_1 == 1 & edu_3 == 1 & clin_3 == 1 & wait_3 == 1
 # Reference category
 
 # Option 2: current practice (closest to existing pilot format)
 # cost_con == 0 & when_3 == 1 & how_1 == 1 & type_2 == 1 & edu_2 == 1 & clin_3 == 1 & wait_2 == 1
 
-# Option 3: practical based on minimising overall cost + copayment
+# Option 3: practical based on maximising utility under cost constraints
 # cost_con == 0 & when_1 == 1 & how_2 == 1 & type_2 == 1 & edu_3 == 1 & clin_3 == 1 & wait_1 == 1
 
 # Want to know uptake by copayment:
@@ -45,8 +45,8 @@ choice_sets <- data.frame(
 )
 
 # Vector of copayment amounts
-# Full cost of test is only around $430, so doesn't make much sense to test further
-cost_values <- seq(0, 500, 10)
+# Full copayment ends at 1200
+cost_values <- seq(0, 1200, 30)
 
 # Number of alternatives per original choice set
 n_alts <- nrow(choice_sets)
@@ -70,24 +70,23 @@ predicted_uptake <- predict(
   type = "prob",
   returnData = TRUE,
   interval = "confidence"
-) |>
+)
+
+uptake_preds <- predicted_uptake |>
   filter(asc == 0) |>
   mutate(
     Policy = Policy,
     predicted_uptake = predicted_prob,
     predicted_uptake_lower = predicted_prob_lower,
     predicted_uptake_upper = predicted_prob_upper,
-    WTP = cost_con,
-    when = when_1 + when_2 * 2 + when_3 * 3,
-    how = how_1 + how_2 * 2 + how_3 * 3,
-    type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
-    edu = edu_1 + edu_2 * 2 + edu_3 * 3,
-    clin = clin_1 + clin_2 * 2 + clin_3 * 3,
-    wait = wait_1 + wait_2 * 2 + wait_3 * 3,
+    predicted_uptake_couple = predicted_uptake^2,
+    predicted_uptake_couple_lower = predicted_prob_lower^2,
+    predicted_uptake_couple_upper = predicted_prob_upper^2,
+    Copayment = cost_con,
     .keep = "none"
   )
 
-print(predicted_uptake, digits = 3, row.names = FALSE)
+saveRDS(uptake_preds, "./Tables/uptake_vs_optout.rds")
 write.csv(predicted_uptake, file = "./Tables/uptake_vs_optout.csv")
 
 # Now from the full menu of alternatives
@@ -123,28 +122,27 @@ optout <- data.frame(
 df_alts <- bind_rows(df_alternatives, optout) |>
   arrange(obsID, Policy)
 
-cost_test <- 430
-
-uptake_alts <- predict(
+predicted_uptake_alts <- predict(
   mmnl_costcon,
   newdata = df_alts,
   obsID = "obsID",
   type = "prob",
   interval = "confidence",
   returnData = TRUE
-) |>
+)
+
+uptake_alts <- predicted_uptake_alts |>
   mutate(
     Policy = Policy,
     predicted_uptake = predicted_prob,
     predicted_uptake_lower = predicted_prob_lower,
     predicted_uptake_upper = predicted_prob_upper,
-    WTP = cost_con,
-    Estimated_eligible_population = NA_real_,
-    Budget_impact = cost_test * Estimated_eligible_population * predicted_uptake,
-    Budget_impact_low = cost_test * Estimated_eligible_population * predicted_uptake_lower,
-    Budget_impact_high = cost_test * Estimated_eligible_population * predicted_uptake_upper,
+    predicted_uptake_couple = predicted_uptake^2,
+    predicted_uptake_couple_lower = predicted_prob_lower^2,
+    predicted_uptake_couple_upper = predicted_prob_upper^2,
+    Copayment = cost_con,
     .keep = "none"
   )
 
-print(uptake_alts, digits = 3)
+saveRDS(uptake_alts, file = "./Tables/uptake_alts.rds")
 write.csv(uptake_alts, file = "./Tables/uptake_alts.csv")

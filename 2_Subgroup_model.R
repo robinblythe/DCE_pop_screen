@@ -72,6 +72,7 @@ summary(mmnl_costcon)
 # Stick with more parsimonious model
 logLik(mmnl_costcon)
 logLik(mmnl_subgroup)
+lmtest::lrtest(mmnl_costcon, mmnl_subgroup)
 
 saveRDS(mmnl_subgroup, "./Models/mmnl_subgroup.rds")
 write.csv(summary(mmnl_subgroup)$coefTable, "./Tables/mmnl_subgroup_results.csv")
