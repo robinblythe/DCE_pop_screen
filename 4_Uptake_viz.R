@@ -62,8 +62,6 @@ p_uptake <- readRDS("./Tables/uptake_vs_optout.rds") |>
   )
 p_uptake
 
-ggsave("./Figures/predicted_uptake_optout.png", height = 6, width = 8)
-
 # Uptake as a function of possible alternatives
 dat <- readRDS("./Tables/uptake_alts.rds")
 dat$WTP[dat$Policy == 4] <- unique(dat$WTP)
@@ -88,8 +86,6 @@ p_alts <- dat |>
   )
 p_alts 
 
-ggsave("./Figures/predicted_uptake_alternatives.png", height = 5, width = 7)
-
 # Combined uptake plot
 (p_uptake) / (p_alts) +
   plot_annotation(tag_levels = "A") +
@@ -108,10 +104,10 @@ choice_sets <- expand.grid(
   wait = c(1, 2, 3)
 )
 
-p_uptake <- make_choice_table(choice_sets = choice_sets) |>
+p_uptake_level <- make_choice_table(choice_sets = choice_sets) |>
   ggplot(aes(x = factor(level), y = predicted_uptake, color = attribute, group = attribute))
 
-p_uptake +
+p_uptake_level +
   geom_line(linewidth = 1) +
   geom_point(size = 2.5) +
   facet_wrap(~cost,
