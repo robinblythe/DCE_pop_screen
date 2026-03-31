@@ -14,7 +14,7 @@ mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 # cost_con == 0 & when_3 == 1 & how_1 == 1 & type_2 == 1 & edu_2 == 1 & clin_3 == 1 & wait_2 == 1
 
 # Option 3: practical based on maximising utility under cost constraints
-# cost_con == 0 & when_1 == 1 & how_2 == 1 & type_2 == 1 & edu_3 == 1 & clin_3 == 1 & wait_1 == 1
+# cost_con == 0 & when_1 == 1 & how_2 == 1 & type_3 == 1 & edu_3 == 1 & clin_3 == 1 & wait_1 == 1
 
 # Want to know uptake by copayment:
 # Get the choice sets below, but repeat for every combination of costs from 0:C, where C = some reasonable copayment
