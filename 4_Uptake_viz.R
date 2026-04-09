@@ -21,7 +21,7 @@ rownames(wtp_costcon)[2:14] <- c(
 p_wtp <- wtp_costcon[2:14, ] |>
   mutate(
     attribute = rownames(wtp_costcon)[2:14],
-    wtp_sgd = Estimate, # Convert to actual SGD
+    wtp_sgd = Estimate, 
     ci_lower = (Estimate - 1.96 * `Std. Error`),
     ci_upper = (Estimate + 1.96 * `Std. Error`)
   ) |>
@@ -57,7 +57,7 @@ p_uptake <- readRDS("./Tables/uptake_vs_optout.rds") |>
   guides(fill = "none") +
   theme(panel.grid.minor = element_blank()) +
   labs(
-    x = "Copayment per test (SGD)",
+    x = "Copayment per couple (SGD)",
     y = "Predicted uptake (compared to opt-out)"
   )
 p_uptake
@@ -81,7 +81,7 @@ p_alts <- dat |>
   theme_minimal() +
   theme(panel.grid.minor = element_blank()) +
   labs(
-    x = "Copayment per test (SGD)",
+    x = "Copayment per couple (SGD)",
     y = "Predicted uptake by program"
   )
 p_alts 

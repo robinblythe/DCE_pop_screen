@@ -1,22 +1,8 @@
 library(tidyverse)
 library(logitr)
 library(patchwork)
-library(flextable)
 
 source("./99_utils.R")
-
-# Overall results table
-dat <- readRDS("./Tables/wtp_results.rds")
-flext <- tabulate_service_costs(dat) |>
-  flextable() |>
-  colformat_double(digits = 2) |>
-  fit_to_width(max_width = 6.5) |>
-  fontsize(size = 10) |>
-  theme_booktabs() |>
-  add_footer_lines("Note: Reference categories set to 0. All values in 2025 Singapore dollars (SGD)") |>
-  suppressWarnings()
-
-save_as_docx(flext, path = "./Tables/service_cost_table.docx")
 
 # Policy estimation parameters
 # Stepwise assumes if positive, do second test, but this is based on our existing ~80 gene panel
@@ -25,9 +11,30 @@ save_as_docx(flext, path = "./Tables/service_cost_table.docx")
 # Tests are roughly the same cost regardless of whether baseline or more comprehensive
 # Rough rate of counselling will stay the same
 # These are limitations to bring up in discussion section
-cost_baseline <- cost_single_test * 2
-cost_pilot <- cost_single_test * 2 + cost_counsellor * (1/113) # Pilot estimates around 1 in 113 at increased risk
-cost_utilitymax <- cost_single_test * 2 + cost_counsellor * (1/113) 
+set.seed(090426)
+
+cost_single_test <- 430
+cost_single_visit <- 154.03
+cost_obgyn <- 240
+
+pos_rate <- rbeta(10000, 1, 114) # Based on pilot results -- not likely to get a better estimate for less/more comprehensive panels
+pos_rate_stepwise <- rbeta(10000, 60, 40) # Based on rough estimates that around 60% of individuals carry at least 1 variant on the panel
+cost_type1 <- rnorm(10000, cost_single_test/2, 25) # Add uncertainty based on some plausible ranges
+cost_type3 <- rlnorm(10000, log(cost_single_test), log(1.11)) # Add uncertainty based on some plausible ranges
+
+cost_baseline <- median(cost_type1)
+cost_baseline_low <- quantile(cost_type1, 0.025)
+cost_baseline_high <- quantile(cost_type1, 0.975)
+
+cost_pilot <- cost_single_test * 2 + cost_single_visit * median(pos_rate)
+cost_pilot_low <- cost_single_test * 2 + cost_single_visit * quantile(pos_rate, 0.025)
+cost_pilot_high <- cost_single_test * 2 + cost_single_visit * quantile(pos_rate, 0.975)
+
+vector_utilitymax <- (cost_type3 + cost_type3 * pos_rate_stepwise) + cost_single_visit * 2
+cost_utilitymax <- median(vector_utilitymax)
+cost_utilitymax_low <- quantile(vector_utilitymax, 0.025)
+cost_utilitymax_high <- quantile(vector_utilitymax, 0.975)
+
 couples_eligible <- 25000
 
 # Policy 1 is baseline, policy 2 is pilot, policy 3 is utility maximising
@@ -38,13 +45,23 @@ budget_optout <- readRDS("./Tables/uptake_vs_optout.rds") |>
       Policy == 2 ~ cost_pilot,
       Policy == 3 ~ cost_utilitymax
     ),
+    cost_test_low = case_when(
+      Policy == 1 ~ cost_baseline_low,
+      Policy == 2 ~ cost_pilot_low,
+      Policy == 3 ~ cost_utilitymax_low
+    ),
+    cost_test_high = case_when(
+      Policy == 1 ~ cost_baseline_high,
+      Policy == 2 ~ cost_pilot_high,
+      Policy == 3 ~ cost_utilitymax_high
+    ),
     Estimated_eligible_population = couples_eligible,
-         Budget_impact = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake,
-         Budget_impact_low = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_lower,
-         Budget_impact_high = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_upper,
-         Budget_impact_couple = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_couple,
-         Budget_impact_couple_low = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_couple_lower,
-         Budget_impact_couple_high = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_couple_upper
+    Budget_impact = pmax(cost_test - Copayment, 0) * Estimated_eligible_population * predicted_uptake,
+    Budget_impact_low = pmax(cost_test_low - Copayment, 0) * Estimated_eligible_population * predicted_uptake_lower,
+    Budget_impact_high = pmax(cost_test_high - Copayment, 0) * Estimated_eligible_population * predicted_uptake_upper,
+    Budget_impact_couple = pmax(cost_test - Copayment, 0) * Estimated_eligible_population * predicted_uptake_couple,
+    Budget_impact_couple_low = pmax(cost_test_low - Copayment, 0) * Estimated_eligible_population * predicted_uptake_couple_lower,
+    Budget_impact_couple_high = pmax(cost_test_high - Copayment, 0) * Estimated_eligible_population * predicted_uptake_couple_upper
     )
 
 
@@ -55,14 +72,24 @@ budget_alts <- readRDS("./Tables/uptake_alts.rds") |>
       Policy == 2 ~ cost_pilot,
       Policy == 3 ~ cost_utilitymax
     ),
-    Estimated_eligible_population = pop_eligible,
-    Budget_impact = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake,
-    Budget_impact_low = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_lower,
-    Budget_impact_high = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_upper,
-    Budget_impact_couple = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_couple,
-    Budget_impact_couple_low = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_couple_lower,
-    Budget_impact_couple_high = (cost_test - pmin(cost_test, Copayment)) * Estimated_eligible_population * predicted_uptake_couple_upper
-    )
+    cost_test_low = case_when(
+      Policy == 1 ~ cost_baseline_low,
+      Policy == 2 ~ cost_pilot_low,
+      Policy == 3 ~ cost_utilitymax_low
+    ),
+    cost_test_high = case_when(
+      Policy == 1 ~ cost_baseline_high,
+      Policy == 2 ~ cost_pilot_high,
+      Policy == 3 ~ cost_utilitymax_high
+    ),
+    Estimated_eligible_population = couples_eligible,
+    Budget_impact = pmax(cost_test - Copayment, 0) * Estimated_eligible_population * predicted_uptake,
+    Budget_impact_low = pmax(cost_test_low - Copayment, 0) * Estimated_eligible_population * predicted_uptake_lower,
+    Budget_impact_high = pmax(cost_test_high - Copayment, 0) * Estimated_eligible_population * predicted_uptake_upper,
+    Budget_impact_couple = pmax(cost_test - Copayment, 0) * Estimated_eligible_population * predicted_uptake_couple,
+    Budget_impact_couple_low = pmax(cost_test_low - Copayment, 0) * Estimated_eligible_population * predicted_uptake_couple_lower,
+    Budget_impact_couple_high = pmax(cost_test_high - Copayment, 0) * Estimated_eligible_population * predicted_uptake_couple_upper
+  )
 
 
 # Budgetary impact
@@ -83,7 +110,7 @@ p_budget_optout <- budget_optout |>
     values_to = "Budget_impact"
   ) |>
   mutate(
-    ci_low  = if_else(Scenario == "individual", individual_low,  couple_low),
+    ci_low = if_else(Scenario == "individual", individual_low,  couple_low),
     ci_high = if_else(Scenario == "individual", individual_high, couple_high),
     Scenario = factor(Scenario,
                       levels = c("individual", "couple"),
@@ -93,7 +120,7 @@ p_budget_optout <- budget_optout |>
   geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.5) +
   geom_line(aes(y = Budget_impact)) +
   facet_wrap(~Policy, nrow = 1) +
-  scale_y_continuous(labels = scales::label_dollar(scale = 1e-6, suffix = "M"), breaks = seq(0, 2e7, 2e6)) +
+  scale_y_continuous(labels = scales::label_dollar(scale = 1e-6, suffix = "M"), breaks = seq(0, 3e7, 2e6)) +
   scale_x_continuous(limits = c(0, 1200), breaks = seq(0, 1200, 300)) +
   scale_fill_manual(values = colours) +
   scale_colour_manual(values = colours) +
