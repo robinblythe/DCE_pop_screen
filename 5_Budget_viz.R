@@ -177,3 +177,6 @@ p_budget_alts
   plot_annotation(tag_levels = "A")
 
 ggsave("./Figures/budget_plot.png", height = 8, width = 8)
+
+write.csv(p_budget_optout$data, "./Tables/Budget_impact_optout.csv")
+write.csv(p_budget_alts$data, "./Tables/Budget_impact_alts.csv")
