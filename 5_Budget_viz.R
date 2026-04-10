@@ -22,9 +22,9 @@ pos_rate_stepwise <- rbeta(10000, 60, 40) # Based on rough estimates that around
 cost_type1 <- rnorm(10000, cost_single_test/2, 25) # Add uncertainty based on some plausible ranges
 cost_type3 <- rlnorm(10000, log(cost_single_test), log(1.11)) # Add uncertainty based on some plausible ranges
 
-cost_baseline <- median(cost_type1)
-cost_baseline_low <- quantile(cost_type1, 0.025)
-cost_baseline_high <- quantile(cost_type1, 0.975)
+cost_baseline <- median(cost_type1) * 2
+cost_baseline_low <- quantile(cost_type1, 0.025) * 2
+cost_baseline_high <- quantile(cost_type1, 0.975) * 2
 
 cost_pilot <- cost_single_test * 2 + cost_single_visit * median(pos_rate)
 cost_pilot_low <- cost_single_test * 2 + cost_single_visit * quantile(pos_rate, 0.025)

@@ -9,22 +9,26 @@ mmnl_costcon <- readRDS("./Models/mmnl_continuous.rds")
 # WTP
 wtp_costcon <- wtp(mmnl_costcon, "cost_con")
 rownames(wtp_costcon)
-rownames(wtp_costcon)[2:14] <- c(
+rownames(wtp_costcon)[2:15] <- c(
   "Screening available at any time", "Married couples only",
   "Stepwise screening", "Individual screening",
   "Extremely severe & severe conditions", "Extremely severe, severe & moderate conditions", "All conditions regardless of severity",
   "In-person appointment pre and post-test", "In-person appointment only for positive tests",
   "OB/GYN", "GP/polyclinic",
-  "Up to 4 weeks wait", "Up to 8 weeks wait"
+  "Up to 4 weeks wait", "Up to 8 weeks wait",
+  "Opt out"
 )
 
-p_wtp <- wtp_costcon[2:14, ] |>
+wtp <- wtp_costcon[2:15, ] |>
   mutate(
-    attribute = rownames(wtp_costcon)[2:14],
+    attribute = rownames(wtp_costcon)[2:15],
     wtp_sgd = Estimate, 
     ci_lower = (Estimate - 1.96 * `Std. Error`),
     ci_upper = (Estimate + 1.96 * `Std. Error`)
-  ) |>
+  )
+
+p_wtp <- wtp |>
+  filter(attribute != "Opt out") |>
   ggplot(aes(x = reorder(attribute, wtp_sgd), y = wtp_sgd))
 
 p_wtp +
@@ -41,7 +45,7 @@ p_wtp +
 saveRDS(p_wtp$data, "./Tables/wtp_results.rds")
 write.csv(p_wtp$data, "./Tables/wtp_results.csv")
 # As figure
-ggsave("./Figures/WTP.png", height = 8, width = 12)
+ggsave("./Figures/WTP.png", height = 5, width = 8)
 
 # Uptake
 p_uptake <- readRDS("./Tables/uptake_vs_optout.rds") |>
