@@ -1,6 +1,41 @@
 library(logitr)
 df_prepared <- readRDS("./Data/df_prepared.RDS")
 
+# Re-added code for initial categorical model
+mmnl_costcat <- logitr(
+  data = df_prepared,
+  outcome = "choice", # Binary flag for option chosen
+  obsID = "obsID",
+  pars = c(
+    # Costs as categorical; cost0 as reference
+    "cost5", "cost15", "cost30", "cost150",
+    # When to screen: Ref = 3
+    "when_1", "when_2",
+    # How to screen, Ref = 1
+    "how_2", "how_3",
+    # Types of conditions to screen, Ref = 1
+    "type_2", "type_3", "type_4",
+    # How to receive education on test, Ref = 3
+    "edu_1", "edu_2",
+    # Which clinician should deliver screening, Ref = 3
+    "clin_1", "clin_2",
+    # Wait times, Ref = 3
+    "wait_1", "wait_2",
+    # Alternative-specific constant
+    "asc"
+  ),
+  panelID = "record",
+  numDraws = 800,
+  drawType = "sobol",
+  options = list(
+    ftol_rel = 1e-8,
+    ftol_abs = 1e-8,
+    maxeval = 10000
+  )
+)
+
+summary(mmnl_costcat)
+
 # Cost as a continuous variable - Fixed effects only first
 mmnl_costcon_FE <- logitr(
   data = df_prepared,
