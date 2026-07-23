@@ -74,5 +74,9 @@ logLik(mmnl_costcon)
 logLik(mmnl_subgroup)
 lmtest::lrtest(mmnl_costcon, mmnl_subgroup)
 
+# Little change in AIC
+AIC(mmnl_costcon)
+AIC(mmnl_subgroup)
+
 saveRDS(mmnl_subgroup, "./Models/mmnl_subgroup.rds")
 write.csv(summary(mmnl_subgroup)$coefTable, "./Tables/mmnl_subgroup_results.csv")
