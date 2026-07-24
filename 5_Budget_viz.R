@@ -35,7 +35,7 @@ cost_utilitymax <- median(vector_utilitymax)
 cost_utilitymax_low <- quantile(vector_utilitymax, 0.025)
 cost_utilitymax_high <- quantile(vector_utilitymax, 0.975)
 
-couples_eligible <- 25000
+Estimated_eligible_population <- 25000
 
 # Policy 1 is baseline, policy 2 is pilot, policy 3 is utility maximising
 budget_optout <- readRDS("./Tables/uptake_vs_optout.rds") |>
@@ -55,7 +55,6 @@ budget_optout <- readRDS("./Tables/uptake_vs_optout.rds") |>
       Policy == 2 ~ cost_pilot_high,
       Policy == 3 ~ cost_utilitymax_high
     ),
-    Estimated_eligible_population = couples_eligible,
     Budget_impact = pmax(cost_test - Copayment, 0) * Estimated_eligible_population * predicted_uptake,
     Budget_impact_low = pmax(cost_test_low - Copayment, 0) * Estimated_eligible_population * predicted_uptake_lower,
     Budget_impact_high = pmax(cost_test_high - Copayment, 0) * Estimated_eligible_population * predicted_uptake_upper,
@@ -82,7 +81,6 @@ budget_alts <- readRDS("./Tables/uptake_alts.rds") |>
       Policy == 2 ~ cost_pilot_high,
       Policy == 3 ~ cost_utilitymax_high
     ),
-    Estimated_eligible_population = couples_eligible,
     Budget_impact = pmax(cost_test - Copayment, 0) * Estimated_eligible_population * predicted_uptake,
     Budget_impact_low = pmax(cost_test_low - Copayment, 0) * Estimated_eligible_population * predicted_uptake_lower,
     Budget_impact_high = pmax(cost_test_high - Copayment, 0) * Estimated_eligible_population * predicted_uptake_upper,
