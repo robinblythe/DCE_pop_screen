@@ -13,24 +13,27 @@ source("./99_utils.R")
 # These are limitations to bring up in discussion section
 set.seed(090426)
 
-cost_single_test <- 430
+cost_single_test <- 266.38
+cost_labour <- 119
 cost_single_visit <- 154.03
 cost_obgyn <- 240
 
-pos_rate <- rbeta(10000, 1, 114) # Based on pilot results -- not likely to get a better estimate for less/more comprehensive panels
+pos_rate <- rbeta(10000, 1, 92) # Based on pilot results. Will need to keep this as our primary estimate as we can't get better guesses for smaller/bigger panels
 pos_rate_stepwise <- rbeta(10000, 60, 40) # Based on rough estimates that around 60% of individuals carry at least 1 variant on the panel
-cost_type1 <- rnorm(10000, cost_single_test/2, 25) # Add uncertainty based on some plausible ranges
-cost_type3 <- rlnorm(10000, log(cost_single_test), log(1.11)) # Add uncertainty based on some plausible ranges
+cost_type1 <- rnorm(10000, cost_single_test - cost_labour/2, 25) # Add uncertainty based on some plausible ranges assuming less labour required
+cost_type2 <- rnorm(10000, cost_single_test, 10) # Fairly certain about this figure as it comes from our lab
+cost_type3 <- rlnorm(10000, log(cost_single_test), log(1.11)) # Add uncertainty based on some plausible ranges for an international test
 
 cost_baseline <- median(cost_type1) * 2
 cost_baseline_low <- quantile(cost_type1, 0.025) * 2
 cost_baseline_high <- quantile(cost_type1, 0.975) * 2
 
-cost_pilot <- cost_single_test * 2 + cost_single_visit * median(pos_rate)
-cost_pilot_low <- cost_single_test * 2 + cost_single_visit * quantile(pos_rate, 0.025)
-cost_pilot_high <- cost_single_test * 2 + cost_single_visit * quantile(pos_rate, 0.975)
+vector_pilot <- cost_type2 * 2 + cost_single_visit * pos_rate
+cost_pilot <- median(vector_pilot)
+cost_pilot_low <- quantile(vector_pilot, 0.025)
+cost_pilot_high <- quantile(vector_pilot, 0.975)
 
-vector_utilitymax <- (cost_type3 + cost_type3 * pos_rate_stepwise) + cost_single_visit * 2
+vector_utilitymax <- (cost_type3 + cost_type3 * pos_rate_stepwise) + cost_single_visit + cost_single_visit * pos_rate
 cost_utilitymax <- median(vector_utilitymax)
 cost_utilitymax_low <- quantile(vector_utilitymax, 0.025)
 cost_utilitymax_high <- quantile(vector_utilitymax, 0.975)

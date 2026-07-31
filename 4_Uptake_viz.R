@@ -122,7 +122,7 @@ p_uptake_level +
     labels = scales::percent,
     breaks = scales::breaks_extended(n = 6),
   ) +
-  scale_colour_viridis_d() +
+  ggokabeito::scale_colour_okabe_ito() +
   labs(
     x = "Attribute Level",
     y = "Predicted Uptake Probability vs Opt-out",
