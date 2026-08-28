@@ -1,21 +1,11 @@
 library(dplyr)
 library(logitr)
 
-fpath <- paste0(
-  
-  "C:/Users
-/ ",
-  Sys.getenv("USERNA
-M E"),
-  "/NUS Dropbox/Robin Daniel Blythe/Carrier screening program/Preference studies/DCEs/ECS preferences/R
-esults"
-)
+fpath <- paste0("C:/Users/ ", Sys.getenv("USERNAME"), "/NUS Dropbox/Robin Daniel Blythe/Carrier screening program/Preference studies/DCEs/ECS preferences/Results")
 df_raw <- read.csv(paste0(fpath, "./genetic_data_dce_final.csv")) |>
- 
-     mutate(
+  mutate(
     across(everything(), ~ if_else(. == -999, 0, .)),
-    cost_con
-      = case_when(
+    cost_con = case_when(
       # Colnames are incorrect; true costs were 0, 100, 300, 600, 1200
       cost_con == 0.5 ~ 100,
       cost_con == 1.5 ~ 300,
