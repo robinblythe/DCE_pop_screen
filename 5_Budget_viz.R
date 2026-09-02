@@ -125,7 +125,7 @@ p_budget_optout <- budget_optout |>
   scale_x_continuous(limits = c(0, 1200), breaks = seq(0, 1200, 300)) +
   scale_fill_manual(values = colours) +
   scale_colour_manual(values = colours) +
-  theme_minimal() +
+  theme_minimal(base_size = 15) +
   theme(panel.grid.minor = element_blank(),
         legend.position = "bottom") +
   labs(x = "Copayment per couple (SGD)",
@@ -166,7 +166,7 @@ p_budget_alts <- budget_alts |>
   geom_line(aes(y = Budget_impact_alt), colour = colours[1]) +
   scale_y_continuous(labels = scales::label_dollar(scale = 1e-6, suffix = "M"), breaks = seq(0, 3e7, 2e6)) +
   scale_x_continuous(limits = c(0, 1200), breaks = seq(0, 1200, 100)) +
-  theme_minimal() +
+  theme_minimal(base_size = 15) +
   theme(panel.grid.minor = element_blank(),
         legend.position = "none") +
   labs(x = "Copayment per couple (SGD)",
@@ -177,7 +177,7 @@ p_budget_alts
 (p_budget_optout) / (p_budget_alts) +
   plot_annotation(tag_levels = "A")
 
-ggsave("./Figures/budget_plot.png", height = 8, width = 8)
+ggsave("./Figures/budget_plot.png", height = 9, width = 9)
 
 write.csv(p_budget_optout$data, "./Tables/Budget_impact_optout.csv")
 write.csv(p_budget_alts$data, "./Tables/Budget_impact_alts.csv")

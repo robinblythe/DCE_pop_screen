@@ -25,12 +25,12 @@ make_choice_table <- function(choice_sets) {
       obsID = obsID,
       predicted_uptake = predicted_prob,
       cost = cost_con,
-      when = when_1 + when_2 * 2 + when_3 * 3,
-      how = how_1 + how_2 * 2 + how_3 * 3,
-      type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4,
-      edu = edu_1 + edu_2 * 2 + edu_3 * 3,
-      clin = clin_1 + clin_2 * 2 + clin_3 * 3,
-      wait = wait_1 + wait_2 * 2 + wait_3 * 3,
+      when = when_1 * 3 + when_2 * 2 + when_3, # ref = 3
+      how = how_1 + how_2 * 2 + how_3 * 3, # Ref = 1
+      type = type_1 + type_2 * 2 + type_3 * 3 + type_4 * 4, # Ref = 1
+      edu = edu_1 * 3 + edu_2 * 2 + edu_3, # Ref = 3
+      clin = clin_1 * 3 + clin_2 * 2 + clin_3, # Ref = 3
+      wait = wait_1 * 3 + wait_2 * 2 + wait_3, # Ref = 3
       .keep = "none"
     )
   

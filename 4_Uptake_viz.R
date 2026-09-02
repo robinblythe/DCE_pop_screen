@@ -16,7 +16,7 @@ p_uptake <- readRDS("./Tables/uptake_vs_optout.rds") |>
   scale_y_continuous(limits = c(0.5, 0.95), breaks = seq(0.5, 1, 0.05)) +
   scale_x_continuous(limits = c(0, 1201), breaks = seq(0, 1200, 300)) +
   scale_fill_manual(values = c("Basic screening" = "#E69F00", "Pilot continuation" = "#56B4E9", "Utility-maximising" = "#0072B2")) +
-  theme_minimal() +
+  theme_minimal(base_size = 15) +
   guides(fill = "none") +
   theme(panel.grid.minor = element_blank()) +
   labs(
@@ -41,7 +41,7 @@ p_alts <- dat |>
     "Utility-maximising" = "#0072B2",
     "Opt-out" = "#999999"
   )) +
-  theme_minimal() +
+  theme_minimal(base_size = 15) +
   theme(panel.grid.minor = element_blank()) +
   labs(
     x = "Copayment per couple (SGD)",
@@ -54,7 +54,7 @@ p_alts
   plot_annotation(tag_levels = "A") +
   plot_layout(guides = "collect")
 
-ggsave("./Figures/predicted_uptake_combined.png", height = 9, width = 9)
+ggsave("./Figures/predicted_uptake_combined.png", height = 9, width = 10)
 
 # Marginal uptake by attribute level
 choice_sets <- expand.grid(
@@ -87,7 +87,7 @@ p_uptake_level +
     y = "Predicted Uptake Probability vs Opt-out",
     color = "Attribute"
   ) +
-  theme_minimal() +
+  theme_minimal(base_size = 15) +
   theme(
     legend.position = "bottom",
     strip.text = element_text(face = "bold"),
